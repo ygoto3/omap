@@ -1,0 +1,39 @@
+{
+  "name": "@ygoto3/omap-vmap-parser",
+  "version": "0.0.1",
+  "description": "Open Media Ad Player VMAP Parser",
+  "main": "./dist/vmap-parser/src/index.js",
+  "types": "./dist/vmap-parser/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/vmap-parser/src/index.d.ts",
+      "import": "./dist/vmap-parser/src/index.js",
+      "require": "./dist/vmap-parser/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": "https://github.com/ygoto3/omap",
+  "author": "ygoto3<my.important.apes@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "uvu -r ts-node/register tests"
+  },
+  "dependencies": {
+    "xml-js": "^1.6.11"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "stream": "^0.0.2",
+    "ts-node": "^10.9.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "uvu": "^0.5.6",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-merge": "^5.10.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

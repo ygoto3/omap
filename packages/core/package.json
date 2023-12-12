@@ -1,0 +1,30 @@
+{
+  "name": "@ygoto3/omap-core",
+  "version": "0.0.1",
+  "description": "Open Media Ad Player core modules",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": "https://github.com/ygoto3/omap",
+  "author": "ygoto3<my.important.apes@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ygoto3/omap-vmap-parser": "^0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ]
+}

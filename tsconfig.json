@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+      "target": "es5",
+      "module": "es2015",
+      "declaration": true,
+      "sourceMap": true,
+      "outDir": "./dist",
+      "rootDir": "./packages",
+      "strict": true,
+      "moduleResolution": "node",
+      "baseUrl": "./packages",
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "skipLibCheck": true
+    },
+    "include": ["./packages/**/*.ts"],
+    "exclude": ["dist", "node_modules"],
+    "compileOnSave": false
+  }

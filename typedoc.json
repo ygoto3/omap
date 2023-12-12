@@ -1,0 +1,14 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": [
+        "./packages/core/src",
+        "./packages/dashjs-binder/src",
+        "./packages/dashjs-sd-binder/src",
+        "./packages/dashjs-ui-binder/src",
+        "./packages/iab-client/src",
+        "./packages/vast-parser/src",
+        "./packages/vmap-parser/src"
+    ],
+    "out": "./docs",
+    "excludePrivate": true
+}

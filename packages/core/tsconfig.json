@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "NodeNext",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDirs": [".src", "../vmap-parser/src"],
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "baseUrl": "src",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "importsNotUsedAsValues": "error",
+    "ignoreDeprecations": "5.0"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"],
+  "compileOnSave": false
+}
