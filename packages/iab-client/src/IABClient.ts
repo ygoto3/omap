@@ -35,12 +35,16 @@ export default class OmapIABClient implements IOmapClient {
     /**
      * @param adTagUrl AD Tag URI
      * @param httpClient You can specify your own HTTP client. If you don't specify, the default HTTP client will be used.
+     * @param prefetchableOffset Offset time to let the IAB client prefetch ad data.
+     * @param prefetchThreshold The threshold of giving up prefetching ad data.
      */
-    constructor(adTagUrl: string, httpClient?: IHttpClient) {
+    constructor(adTagUrl: string, httpClient?: IHttpClient, prefetchableOffset: number = 5, prefetchThreshold: number = 2) {
         this._countAdBreakConsumption = this._countAdBreakConsumption.bind(this);
 
         this._adTagUrl = adTagUrl;
-        this.httpClient = httpClient ? httpClient : new DefaultHttpClient();
+        if (prefetchableOffset) this.prefetchableOffset = prefetchableOffset;
+        if (prefetchThreshold) this.prefetchThreshold = prefetchThreshold;
+        if (httpClient) this.httpClient = httpClient;
         this._init();
     }
 
@@ -67,6 +71,7 @@ export default class OmapIABClient implements IOmapClient {
     on(type: typeof OmapClientEvent.STARTED, listener: () => void): void;
     on(type: typeof OmapClientEvent.COMPLETE, listener: () => void): void;
     on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+    on(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     on(type: TOmapClientEvent, listener: (...args: any[]) => void): void {
         this._eventListeners.push([ type, listener ]);
     }
@@ -79,6 +84,7 @@ export default class OmapIABClient implements IOmapClient {
     off(type: typeof OmapClientEvent.LOAD_ERROR, listener: () => void): void;
     off(type: typeof OmapClientEvent.STARTED, listener: () => void): void;
     off(type: typeof OmapClientEvent.COMPLETE, listener: () => void): void;
+    off(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     off(type: TOmapClientEvent, listener: (...args: any[]) => void): void {
         this._eventListeners = this._eventListeners.filter((eventListener) => {
@@ -93,8 +99,21 @@ export default class OmapIABClient implements IOmapClient {
         if (!this._playing || this._playingAd) return;
         const adBreaks = this._vmap?.adBreaks || [];
 
-        const adBreakToInsert = this._adInsertionDecider(currentTime, adBreaks, this._countAdBreakConsumption);
-        if (adBreakToInsert) this._requestAdInsertion(adBreakToInsert);
+        const adBreakToInsert = this._adInsertionDecider(currentTime + this.prefetchableOffset, adBreaks, this._countAdBreakConsumption);
+        if (adBreakToInsert) {
+            const calcTime = (adBreak: AdBreak) => adBreak.timeOffset.split(':')
+                    .map((timeElm: string, index: number) => {
+                        return +timeElm * Math.pow(60, 2 - index);
+                    })
+                    .reduce((prev: number, curr: number) => curr + prev, 0);
+            const offsetTime = adBreakToInsert.timeOffset === 'start' ? 0 : calcTime(adBreakToInsert);
+            
+            if (offsetTime - currentTime <= this.prefetchableOffset && offsetTime - currentTime > this.prefetchThreshold) {
+                this._requestAdPreparation(adBreakToInsert);
+            } else if (offsetTime === 0 || !this.prefetchableOffset || currentTime >= offsetTime) {
+                this._requestAdInsertion(adBreakToInsert);
+            }
+        } 
         else if (!this._canPlay) {
             this._canPlay = true;
             this.emit(OmapClientEvent.CONTENT_CAN_PLAY);
@@ -189,6 +208,8 @@ export default class OmapIABClient implements IOmapClient {
         });
     }
 
+    protected prefetchableOffset: number = 5;
+    protected prefetchThreshold: number = 2;
     protected httpClient: IHttpClient = new DefaultHttpClient();
 
     protected onContentTimeUpdate(
@@ -231,6 +252,7 @@ export default class OmapIABClient implements IOmapClient {
     protected emit(type: typeof OmapClientEvent.LOAD_ERROR): void;
     protected emit(type: typeof OmapClientEvent.STARTED): void;
     protected emit(type: typeof OmapClientEvent.COMPLETE): void;
+    protected emit(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, adPodInsertionRequest: AdPodInsertionRequest): void;
     protected emit(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, adPodInsertionRequest: AdPodInsertionRequest): void;
     protected emit(type: TOmapClientEvent, ...args: any[]): void {
         Debug.log(`Event type ${ type } is emitted`);
@@ -249,13 +271,14 @@ export default class OmapIABClient implements IOmapClient {
     private _impressionAds: { [key: string]: Impression[] } = {};
     private _errors: { [key: string]: string[] } = {};
     private _canPlay: boolean = false;
+    private _preparedAdBreak?: AdBreak;
 
     private _adInsertionDecider = this._defaultAdInsertionDecider;
 
     private _defaultAdInsertionDecider(
         currentTime: number,
         adBreaks: AdBreak[],
-        countAdBreakConsumption: (adBreak: AdBreak) => number
+        countAdBreakConsumption: (adBreak: AdBreak) => number,
     ): AdBreak | undefined {
         for (let i = 0; i < adBreaks.length; i++) {
             const adBreak = adBreaks[i] as AdBreak | undefined;
@@ -273,8 +296,10 @@ export default class OmapIABClient implements IOmapClient {
                     .reduce((prev: number, curr: number) => curr + prev, 0);
                 const time = calcTime(adBreak);
                 let nextTime = Number.MAX_VALUE;
-                if (nextAdBreak) nextTime = calcTime(nextAdBreak);
-                if (currentTime >= time && currentTime < nextTime) {
+                if (nextAdBreak && nextAdBreak.timeOffset.includes(':')) {
+                    nextTime = calcTime(nextAdBreak);
+                }
+                if (currentTime >= time && currentTime <= nextTime) {
                     return adBreak;
                 }
             }
@@ -319,54 +344,82 @@ export default class OmapIABClient implements IOmapClient {
         return 0;
     }
 
-    private _requestAdInsertion(adBreak: AdBreak): void {
-        this._registerAdBreakConsumption(adBreak);
-        adBreak.adSources.forEach(adSource => {
-            if (adSource.adTagURI.templateType === 'vast3') {
-                this.httpClient.get(adSource.adTagURI.uri)
-                    .then(text => {
-                        const vast = new VASTParser(text).parse();
-                        if (!vast) return;
+    private _cache = new Map<string, AdPod>();
 
-                        const ads = sortAdsBySequence(vast.ads).map((ad, adIdx) => {
-                            if (!ad.inLine) return null;
-                            const inLine = ad.inLine;
-                            const adSequence = adIdx + 1;
-                            let skipOffset = 0;
-                            const adCreatives = inLine.creatives.map((creative, creativeIdx) => {
-                                const creativeSequence = creative.sequence ? creative.sequence : creativeIdx;
-                                const linear = creative.linear;
-                                if (linear?.skipOffset) skipOffset = linear.skipOffset;
-                                const mediaFiles = linear?.mediaFiles.map(mediaFile => {
-                                    const url = mediaFile.url;
-                                    const width = mediaFile.width;
-                                    const height = mediaFile.height;
-                                    return new AdMediaFile(url, width, height);
-                                });
-                                if (!mediaFiles) return null;
-                                const duration = linear?.duration || 0;
-                                const trackingEvents = linear?.trackingEvents;
-                                const adParameters = linear?.adParameters;
-                                const newAdCreative = new AdCreative(creative.id, creativeSequence, duration, mediaFiles, adParameters);
-                                if (trackingEvents) {
-                                    this._registerTrackingAd(newAdCreative, trackingEvents, adSequence);
-                                }
-                                return newAdCreative;
-                            }).filter(filterNull) as AdCreative[];
-                            const newAdObj = new AdObj(adCreatives, adSequence, ad.id, skipOffset);
-                            this._registerImpressingAd(newAdObj, ad.inLine.impressions);
-                            this._registerErrorAd(newAdObj, inLine.errors);
-                            return newAdObj;
-                        }).filter(filterNull) as AdObj[];
-
-                        const adPod = new AdPod(ads);
-                        const adPodInsertionRequest = new AdPodInsertionRequest(adPod);
-                        this._playingAd = true;
-                        this.emit(OmapClientEvent.CONTENT_PAUSE_REQUESTED);
-                        this.emit(OmapClientEvent.AD_POD_INSERTION_REQUESTED, adPodInsertionRequest);
-                    });
-            }
+    private _adBreak2AdPod(adBreak: AdBreak): Promise<AdPod> {
+        return new Promise<AdPod>((resolve, reject) => {
+            adBreak.adSources.forEach(adSource => {
+                if (adSource.adTagURI.templateType === 'vast3') {
+                    if (this._cache.has(adSource.adTagURI.uri)) {
+                        resolve(this._cache.get(adSource.adTagURI.uri) as AdPod);
+                        return;
+                    }
+                    this.httpClient.get(adSource.adTagURI.uri)
+                        .then(text => {
+                            const vast = new VASTParser(text).parse();
+                            if (!vast) {
+                                reject(new Error('Failed to parse VAST'));
+                                return;
+                            }
+    
+                            const ads = sortAdsBySequence(vast.ads).map((ad, adIdx) => {
+                                if (!ad.inLine) return null;
+                                const inLine = ad.inLine;
+                                const adSequence = adIdx + 1;
+                                let skipOffset = 0;
+                                const adCreatives = inLine.creatives.map((creative, creativeIdx) => {
+                                    const creativeSequence = creative.sequence ? creative.sequence : creativeIdx;
+                                    const linear = creative.linear;
+                                    if (linear?.skipOffset) skipOffset = linear.skipOffset;
+                                    const mediaFiles = linear?.mediaFiles.map(mediaFile => {
+                                        const url = mediaFile.url;
+                                        const width = mediaFile.width;
+                                        const height = mediaFile.height;
+                                        return new AdMediaFile(url, width, height);
+                                    });
+                                    if (!mediaFiles) return null;
+                                    const duration = linear?.duration || 0;
+                                    const trackingEvents = linear?.trackingEvents;
+                                    const adParameters = linear?.adParameters;
+                                    const newAdCreative = new AdCreative(creative.id, creativeSequence, duration, mediaFiles, adParameters);
+                                    if (trackingEvents) {
+                                        this._registerTrackingAd(newAdCreative, trackingEvents, adSequence);
+                                    }
+                                    return newAdCreative;
+                                }).filter(filterNull) as AdCreative[];
+                                const newAdObj = new AdObj(adCreatives, adSequence, ad.id, skipOffset);
+                                this._registerImpressingAd(newAdObj, ad.inLine.impressions);
+                                this._registerErrorAd(newAdObj, inLine.errors);
+                                return newAdObj;
+                            }).filter(filterNull) as AdObj[];
+    
+                            const adPod = new AdPod(ads);
+                            this._cache.set(adSource.adTagURI.uri, adPod);
+                            resolve(adPod);
+                        });
+                }
+            });
         });
+    }
+
+    private async _requestAdPreparation(adBreak: AdBreak): Promise<void> {
+        if (this._preparedAdBreak === adBreak) return;
+        this._preparedAdBreak = adBreak;
+        const adPod = await this._adBreak2AdPod(adBreak);
+        if (!adPod) return;
+        const adPodInsertionRequest = new AdPodInsertionRequest(adPod);
+        this.emit(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, adPodInsertionRequest);
+    }
+
+    private async _requestAdInsertion(adBreak: AdBreak): Promise<void> {
+        delete this._preparedAdBreak;
+        this._registerAdBreakConsumption(adBreak);
+        const adPod = await this._adBreak2AdPod(adBreak);
+        if (!adPod) return;
+        const adPodInsertionRequest = new AdPodInsertionRequest(adPod);
+        this._playingAd = true;
+        this.emit(OmapClientEvent.CONTENT_PAUSE_REQUESTED);
+        this.emit(OmapClientEvent.AD_POD_INSERTION_REQUESTED, adPodInsertionRequest);
     }
 
     private _registerTrackingAd(adCreative: AdCreative, trackingEvents: Tracking[], adSequence: number): void {

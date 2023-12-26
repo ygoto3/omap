@@ -8,6 +8,7 @@ export default {
     LOAD_ERROR: 'load_error',
     STARTED: 'started',
     COMPLETE: 'complete',
+    AD_POD_PREPARATION_REQUESTED: 'adPodPreparationRequested',
     AD_POD_INSERTION_REQUESTED: 'adPodInsertionRequested',
 
 } as const;

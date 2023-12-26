@@ -133,6 +133,13 @@ export default interface IOmapClient {
     on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
 
     /**
+     * Use the on method to listen for the `AD_POD_PREPARATION_REQUESTED` event.
+     * @param type the type of event : `OmapClientEvent.AD_POD_PREPARATION_REQUESTED`
+     * @param listener the listener function
+     */
+    on(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+
+    /**
      * Use the off method to remove listener for the `CONTENT_CAN_PLAY` event.
      * @param type the type of event : `OmapClientEvent.CONTENT_CAN_PLAY`
      * @param listener the listener function
@@ -194,5 +201,12 @@ export default interface IOmapClient {
      * @param listener the listener function
      */
     off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+
+    /**
+     * Use the off method to remove listener for the `AD_POD_PREPARATION_REQUESTED` event.
+     * @param type the type of event : `OmapClientEvent.AD_POD_PREPARATION_REQUESTED`
+     * @param listener the listener function
+     */
+    off(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
 
 }
