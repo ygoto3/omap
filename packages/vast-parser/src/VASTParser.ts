@@ -125,7 +125,7 @@ export default class VASTParser {
                 return new Impression(impression._cdata);
             });
             const inLine = new InLine('', '', impressions, creatives, void 0, void 0, void 0, void 0, void 0, errors, extensions);
-            const newAd = new Ad(ad._attributes.id, ad._attributes.sequence ? parseInt(ad._attributes.sequence) : void 0, inLine);
+            const newAd = new Ad(ad._attributes?.id, ad._attributes?.sequence ? parseInt(ad._attributes.sequence) : void 0, inLine);
             return newAd;
         });
         const newVast = new VAST(vastObj._attributes.version, ads);

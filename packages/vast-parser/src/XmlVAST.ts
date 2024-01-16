@@ -22,7 +22,7 @@ interface XmlVASTError {
 
 // 3.3 Ad
 interface XmlVASTAd {
-    _attributes: XmlVASTAdAttributes;
+    _attributes?: XmlVASTAdAttributes;
     InLine?: XmlVASTInLine;
     Wrapper?: XmlVASTWrapper;
 }

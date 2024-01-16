@@ -49,6 +49,22 @@ test('adTagUrl is vmap', async () => {
     const midroll_1_ad_1_creative_1_tracking_midpoint = createPromise();
     const midroll_1_ad_1_creative_1_tracking_thirdQuartile = createPromise();
     const midroll_1_ad_1_creative_1_tracking_complete = createPromise();
+
+    const midroll_2 = createPromise();
+
+    const midroll_2_ad_1_impression_1 = createPromise();
+    const midroll_2_ad_1_creative_1_tracking_start = createPromise();
+    const midroll_2_ad_1_creative_1_tracking_firstQuartile = createPromise();
+    const midroll_2_ad_1_creative_1_tracking_midpoint = createPromise();
+    const midroll_2_ad_1_creative_1_tracking_thirdQuartile = createPromise();
+    const midroll_2_ad_1_creative_1_tracking_complete = createPromise();
+
+    const midroll_2_ad_2_impression_1 = createPromise();
+    const midroll_2_ad_2_creative_1_tracking_start = createPromise();
+    const midroll_2_ad_2_creative_1_tracking_firstQuartile = createPromise();
+    const midroll_2_ad_2_creative_1_tracking_midpoint = createPromise();
+    const midroll_2_ad_2_creative_1_tracking_thirdQuartile = createPromise();
+    const midroll_2_ad_2_creative_1_tracking_complete = createPromise();
     
     adClient.on(OmapClientEvent.CONTENT_PAUSE_REQUESTED, () => {
         content_pause_requested_count++;
@@ -81,17 +97,17 @@ test('adTagUrl is vmap', async () => {
                         </vmap:AdBreak>
                         <vmap:AdBreak timeOffset="00:00:15.000" breakType="linear" breakId="midroll-1">
                             <vmap:AdSource id="midroll-1-ad-1" allowMultipleAds="false" followRedirects="true">
-                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-1-ad-1]]></vmap:AdTagURI>
+                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-1]]></vmap:AdTagURI>
                             </vmap:AdSource>
                         </vmap:AdBreak>
                         <vmap:AdBreak timeOffset="00:00:30.000" breakType="linear" breakId="midroll-2">
-                            <vmap:AdSource id="midroll-1-ad-2" allowMultipleAds="false" followRedirects="true">
-                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-1-ad-2]]></vmap:AdTagURI>
+                            <vmap:AdSource id="midroll-2-ad-1" allowMultipleAds="false" followRedirects="true">
+                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-2]]></vmap:AdTagURI>
                             </vmap:AdSource>
                         </vmap:AdBreak>
                         <vmap:AdBreak timeOffset="00:00:45.000" breakType="linear" breakId="midroll-3">
-                            <vmap:AdSource id="midroll-1-ad-3" allowMultipleAds="false" followRedirects="true">
-                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-1-ad-3]]></vmap:AdTagURI>
+                            <vmap:AdSource id="midroll-3-ad-1" allowMultipleAds="false" followRedirects="true">
+                                <vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast/midroll-3]]></vmap:AdTagURI>
                             </vmap:AdSource>
                         </vmap:AdBreak>
                         <vmap:AdBreak timeOffset="end" breakType="linear" breakId="postroll">
@@ -190,7 +206,7 @@ test('adTagUrl is vmap', async () => {
                         </Ad>
                     </VAST>
                 `);
-            case 'https://example.com/vast/midroll-1-ad-1':
+            case 'https://example.com/vast/midroll-1':
                 midroll_1.resolve();
                 return Promise.resolve(`
                     <?xml version="1.0" encoding="UTF-8"?>
@@ -199,23 +215,106 @@ test('adTagUrl is vmap', async () => {
                             <InLine>
                                 <AdSystem>SSP</AdSystem>
                                 <AdTitle>DSP></AdTitle>
-                                <Impression><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/impression/1]]></Impression>
+                                <Impression><![CDATA[https://example.com/vast/midroll-1/ad/1/impression/1]]></Impression>
                                 <Impression></Impression>
                                 <Description></Description>
                                 <Advertiser>example.com</Advertiser>
                                 <Survey type=""></Survey>
-                                <Error><![CDATA[https://example.com/vast/midroll-1-ad-1/ad/1/error/1]]></Error>
-                                <Error><![CDATA[https://example.com/vast/midroll-1-ad-1/ad/1/error/2]]></Error>
+                                <Error><![CDATA[https://example.com/vast/midroll-1/ad/1/error/1]]></Error>
+                                <Error><![CDATA[https://example.com/vast/midroll-1/ad/1/error/2]]></Error>
                                 <Creatives>
                                     <Creative id="1">
                                     <Linear>
                                         <Duration>00:00:10</Duration>
                                         <TrackingEvents>
-                                            <Tracking event="start"><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/start]]></Tracking>
-                                            <Tracking event="firstQuartile"><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/firstQuartile]]></Tracking>
-                                            <Tracking event="midpoint"><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/midpoint]]></Tracking>
-                                            <Tracking event="thirdQuartile"><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/thirdQuartile]]></Tracking>
-                                            <Tracking event="complete"><![CDATA[https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/complete]]></Tracking>
+                                            <Tracking event="start"><![CDATA[https://example.com/vast/midroll-1/ad/1/creative/1/tracking/start]]></Tracking>
+                                            <Tracking event="firstQuartile"><![CDATA[https://example.com/vast/midroll-1/ad/1/creative/1/tracking/firstQuartile]]></Tracking>
+                                            <Tracking event="midpoint"><![CDATA[https://example.com/vast/midroll-1/ad/1/creative/1/tracking/midpoint]]></Tracking>
+                                            <Tracking event="thirdQuartile"><![CDATA[https://example.com/vast/midroll-1/ad/1/creative/1/tracking/thirdQuartile]]></Tracking>
+                                            <Tracking event="complete"><![CDATA[https://example.com/vast/midroll-1/ad/1/creative/1/tracking/complete]]></Tracking>
+                                        </TrackingEvents>
+                                        <MediaFiles>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="4000" width="1920" height="1080"><![CDATA[https://example.com/media/vod-4000k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="2000" width="1280" height="720"><![CDATA[https://example.com/media/vod-2000k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="1200" width="854" height="480"><![CDATA[https://example.com/media/vod-1200k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="800" width="640" height="360"><![CDATA[https://example.com/media/vod-800k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="240" width="426" height="240"><![CDATA[https://example.com/media/vod-240k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="120" width="320" height="180"><![CDATA[https://example.com/media/vod-120k-5.mp4]]></MediaFile>
+                                        </MediaFiles>
+                                    </Linear>
+                                    <CreativeExtensions>
+                                        <CreativeExtension type="type-1"><ID>4237</ID></CreativeExtension>
+                                    </CreativeExtensions>
+                                    </Creative>
+                                </Creatives>
+                            </InLine>
+                        </Ad>
+                    </VAST>
+                `);
+            case 'https://example.com/vast/midroll-2':
+                midroll_2.resolve();
+                return Promise.resolve(`
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast.xsd" version="3.0">
+                        <Ad>
+                            <InLine>
+                                <AdSystem>SSP</AdSystem>
+                                <AdTitle>DSP></AdTitle>
+                                <Impression><![CDATA[https://example.com/vast/midroll-2/ad/1/impression/1]]></Impression>
+                                <Impression></Impression>
+                                <Description></Description>
+                                <Advertiser>example.com</Advertiser>
+                                <Survey type=""></Survey>
+                                <Error><![CDATA[https://example.com/vast/midroll-2/ad/2/error/1]]></Error>
+                                <Error><![CDATA[https://example.com/vast/midroll-2/ad/2/error/2]]></Error>
+                                <Creatives>
+                                    <Creative id="1">
+                                    <Linear>
+                                        <Duration>00:00:10</Duration>
+                                        <TrackingEvents>
+                                            <Tracking event="start"><![CDATA[https://example.com/vast/midroll-2/ad/1/creative/1/tracking/start]]></Tracking>
+                                            <Tracking event="firstQuartile"><![CDATA[https://example.com/vast/midroll-2/ad/1/creative/1/tracking/firstQuartile]]></Tracking>
+                                            <Tracking event="midpoint"><![CDATA[https://example.com/vast/midroll-2/ad/1/creative/1/tracking/midpoint]]></Tracking>
+                                            <Tracking event="thirdQuartile"><![CDATA[https://example.com/vast/midroll-2/ad/1/creative/1/tracking/thirdQuartile]]></Tracking>
+                                            <Tracking event="complete"><![CDATA[https://example.com/vast/midroll-2/ad/1/creative/1/tracking/complete]]></Tracking>
+                                        </TrackingEvents>
+                                        <MediaFiles>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="4000" width="1920" height="1080"><![CDATA[https://example.com/media/vod-4000k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="2000" width="1280" height="720"><![CDATA[https://example.com/media/vod-2000k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="1200" width="854" height="480"><![CDATA[https://example.com/media/vod-1200k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="800" width="640" height="360"><![CDATA[https://example.com/media/vod-800k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="240" width="426" height="240"><![CDATA[https://example.com/media/vod-240k-5.mp4]]></MediaFile>
+                                            <MediaFile delivery="progressive" type="video/mp4" bitrate="120" width="320" height="180"><![CDATA[https://example.com/media/vod-120k-5.mp4]]></MediaFile>
+                                        </MediaFiles>
+                                    </Linear>
+                                    <CreativeExtensions>
+                                        <CreativeExtension type="type-1"><ID>4237</ID></CreativeExtension>
+                                    </CreativeExtensions>
+                                    </Creative>
+                                </Creatives>
+                            </InLine>
+                        </Ad>
+                        <Ad sequence="2">
+                            <InLine>
+                                <AdSystem>SSP</AdSystem>
+                                <AdTitle>DSP></AdTitle>
+                                <Impression><![CDATA[https://example.com/vast/midroll-2/ad/2/impression/1]]></Impression>
+                                <Impression></Impression>
+                                <Description></Description>
+                                <Advertiser>example.com</Advertiser>
+                                <Survey type=""></Survey>
+                                <Error><![CDATA[https://example.com/vast/midroll-2/ad/2/error/1]]></Error>
+                                <Error><![CDATA[https://example.com/vast/midroll-2/ad/2/error/2]]></Error>
+                                <Creatives>
+                                    <Creative id="1">
+                                    <Linear>
+                                        <Duration>00:00:10</Duration>
+                                        <TrackingEvents>
+                                            <Tracking event="start"><![CDATA[https://example.com/vast/midroll-2/ad/2/creative/1/tracking/start]]></Tracking>
+                                            <Tracking event="firstQuartile"><![CDATA[https://example.com/vast/midroll-2/ad/2/creative/1/tracking/firstQuartile]]></Tracking>
+                                            <Tracking event="midpoint"><![CDATA[https://example.com/vast/midroll-2/ad/2/creative/1/tracking/midpoint]]></Tracking>
+                                            <Tracking event="thirdQuartile"><![CDATA[https://example.com/vast/midroll-2/ad/2/creative/1/tracking/thirdQuartile]]></Tracking>
+                                            <Tracking event="complete"><![CDATA[https://example.com/vast/midroll-2/ad/2/creative/1/tracking/complete]]></Tracking>
                                         </TrackingEvents>
                                         <MediaFiles>
                                             <MediaFile delivery="progressive" type="video/mp4" bitrate="4000" width="1920" height="1080"><![CDATA[https://example.com/media/vod-4000k-5.mp4]]></MediaFile>
@@ -283,23 +382,59 @@ test('adTagUrl is vmap', async () => {
             case 'https://example.com/vast/ad/2/creative/1/tracking/complete':
                 ad_2_creative_1_tracking_complete.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/impression/1':
+            case 'https://example.com/vast/midroll-1/ad/1/impression/1':
                 midroll_1_ad_1_impression_1.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/start':
+            case 'https://example.com/vast/midroll-1/ad/1/creative/1/tracking/start':
                 midroll_1_ad_1_creative_1_tracking_start.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/firstQuartile':
+            case 'https://example.com/vast/midroll-1/ad/1/creative/1/tracking/firstQuartile':
                 midroll_1_ad_1_creative_1_tracking_firstQuartile.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/midpoint':
+            case 'https://example.com/vast/midroll-1/ad/1/creative/1/tracking/midpoint':
                 midroll_1_ad_1_creative_1_tracking_midpoint.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/thirdQuartile':
+            case 'https://example.com/vast/midroll-1/ad/1/creative/1/tracking/thirdQuartile':
                 midroll_1_ad_1_creative_1_tracking_thirdQuartile.resolve();
                 return Promise.resolve('');
-            case 'https://example.com/vmap/midroll-1/vast/ad/1/creative/1/tracking/complete':
+            case 'https://example.com/vast/midroll-1/ad/1/creative/1/tracking/complete':
                 midroll_1_ad_1_creative_1_tracking_complete.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/impression/1':
+                midroll_2_ad_1_impression_1.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/creative/1/tracking/start':
+                midroll_2_ad_1_creative_1_tracking_start.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/creative/1/tracking/firstQuartile':
+                midroll_2_ad_1_creative_1_tracking_firstQuartile.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/creative/1/tracking/midpoint':
+                midroll_2_ad_1_creative_1_tracking_midpoint.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/creative/1/tracking/thirdQuartile':
+                midroll_2_ad_1_creative_1_tracking_thirdQuartile.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/1/creative/1/tracking/complete':
+                midroll_2_ad_1_creative_1_tracking_complete.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/impression/1':
+                midroll_2_ad_2_impression_1.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/creative/1/tracking/start':
+                midroll_2_ad_2_creative_1_tracking_start.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/creative/1/tracking/firstQuartile':
+                midroll_2_ad_2_creative_1_tracking_firstQuartile.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/creative/1/tracking/midpoint':
+                midroll_2_ad_2_creative_1_tracking_midpoint.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/creative/1/tracking/thirdQuartile':
+                midroll_2_ad_2_creative_1_tracking_thirdQuartile.resolve();
+                return Promise.resolve('');
+            case 'https://example.com/vast/midroll-2/ad/2/creative/1/tracking/complete':
+                midroll_2_ad_2_creative_1_tracking_complete.resolve();
                 return Promise.resolve('');
             default:
                 return Promise.reject('Should not be called');
@@ -407,7 +542,7 @@ test('adTagUrl is vmap', async () => {
     await midroll_1_ad_1_creative_1_tracking_firstQuartile.promise;
     assert.ok(true, 'Midroll 1 Creative 1 tracking firstQuartile should be sent');
 
-    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 5.0, ad.sequence, );
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 5.0, ad.sequence);
     await midroll_1_ad_1_creative_1_tracking_midpoint.promise;
     assert.ok(true, 'Midroll 1 Creative 1 tracking midpoint should be sent');
 
@@ -424,6 +559,69 @@ test('adTagUrl is vmap', async () => {
     }
 
     assert.is(content_resume_requested_count, 1, 'Content resume should be requested');
+
+    adClient.notifyCurrentTime(30);
+    await midroll_2.promise;
+
+    // midroll 2 - 1st ad
+    ad = ad_pod!.ads[0];
+    
+    adClient.notifyAdStarted(ad);
+    await midroll_2_ad_1_impression_1.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Impression 1 should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 0.2, ad.sequence);
+    await midroll_2_ad_1_creative_1_tracking_start.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Creative 1 tracking start should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 2.5, ad.sequence);
+    await midroll_2_ad_1_creative_1_tracking_firstQuartile.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Creative 1 tracking firstQuartile should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 5.0, ad.sequence);
+    await midroll_2_ad_1_creative_1_tracking_midpoint.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Creative 1 tracking midpoint should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 7.5, ad.sequence);
+    await midroll_2_ad_1_creative_1_tracking_thirdQuartile.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Creative 1 tracking thirdQuartile should be sent');
+
+    adClient.notifyAdCreativeEnded(ad.adCreatives[0], ad.sequence);
+    await midroll_2_ad_1_creative_1_tracking_complete.promise;
+    assert.ok(true, 'Midroll 2 Ad 1 Creative 1 tracking complete should be sent');
+
+    // midroll 2 - 2nd ad
+    ad = ad_pod!.ads[1];
+    
+    adClient.notifyAdStarted(ad);
+    await midroll_2_ad_2_impression_1.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Impression 1 should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 0.2, ad.sequence);
+    await midroll_2_ad_2_creative_1_tracking_start.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Creative 1 tracking start should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 2.5, ad.sequence);
+    await midroll_2_ad_2_creative_1_tracking_firstQuartile.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Creative 1 tracking firstQuartile should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 5.0, ad.sequence);
+    await midroll_2_ad_2_creative_1_tracking_midpoint.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Creative 1 tracking midpoint should be sent');
+
+    adClient.notifyAdCreativePlaying(ad.adCreatives[0], 7.5, ad.sequence);
+    await midroll_2_ad_2_creative_1_tracking_thirdQuartile.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Creative 1 tracking thirdQuartile should be sent');
+
+    adClient.notifyAdCreativeEnded(ad.adCreatives[0], ad.sequence);
+    await midroll_2_ad_2_creative_1_tracking_complete.promise;
+    assert.ok(true, 'Midroll 2 Ad 2 Creative 1 tracking complete should be sent');
+
+    if (ad_pod!.ads.length === ad.sequence) {
+        adClient.notifyAdPodEnded();
+    }
+
+    assert.is(content_resume_requested_count, 2, 'Content resume should be requested');
 });
 
 test('sort ads by sequence', async () => {
