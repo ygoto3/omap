@@ -18,7 +18,8 @@ import {
     VASTParser,
     Tracking,
     LinearAdMetric,
-    Impression
+    Impression,
+    type Ad,
 } from '@ygoto3/omap-vast-parser';
 import { Debug, filterNull } from '../../utils/src';
 
@@ -327,10 +328,10 @@ export default class OmapIABClient implements IOmapClient {
                         const vast = new VASTParser(text).parse();
                         if (!vast) return;
 
-                        const ads = vast.ads.map((ad, adIdx) => {
+                        const ads = sortAdsBySequence(vast.ads).map((ad, adIdx) => {
                             if (!ad.inLine) return null;
                             const inLine = ad.inLine;
-                            const adSequence = ad.sequence ? ad.sequence : adIdx;
+                            const adSequence = adIdx + 1;
                             let skipOffset = 0;
                             const adCreatives = inLine.creatives.map((creative, creativeIdx) => {
                                 const creativeSequence = creative.sequence ? creative.sequence : creativeIdx;
@@ -435,6 +436,43 @@ function getAdKey(ad: AdObj): string {
 
 function getAdCreativeKey(adCreative: AdCreative, adSequence: number): string {
     return `${ adSequence }:${ adCreative.id }:${ adCreative.sequence }`;
+}
+
+export function sortAdsBySequence(ads: Ad[]): Ad[] {
+    const seq: Ad[] = [];
+    const duplicated: Ad[] = [];
+    const rest: Ad[] = [];
+    ads.forEach(ad => {
+        if (typeof ad.sequence === 'undefined') {
+            rest.push(ad);
+            return;
+        } else if (typeof seq[ad.sequence - 1] === 'undefined') {
+            seq[ad.sequence - 1] = ad;
+            return;
+        } else {
+            duplicated.push(ad);
+        }
+    });
+    duplicated.forEach(ad => {
+        if (typeof ad.sequence === 'undefined') return;
+        const idx = ad.sequence - 1;
+        const offsetToInsert = seq.slice(idx).findIndex(s => typeof s === 'undefined');
+        if (!~offsetToInsert) {
+            seq.push(ad);
+        } else {
+            seq[idx + offsetToInsert] = ad;
+        }
+    });
+    rest.forEach(ad => {
+        if (typeof ad.sequence !== 'undefined') return;
+        const idxToInsert = seq.findIndex(s => typeof s === 'undefined');
+        if (!~idxToInsert) {
+            seq.push(ad);
+        } else {
+            seq[idxToInsert] = ad;
+        }
+    });
+    return seq.filter(s => typeof s !== 'undefined');
 }
 
 type AdBreakConsumption = {

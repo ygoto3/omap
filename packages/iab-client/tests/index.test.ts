@@ -1,7 +1,8 @@
 import { suite } from 'uvu';
 import * as assert from 'uvu/assert';
-import IABClient from '../src/IABClient';
+import IABClient, { sortAdsBySequence } from '../src/IABClient';
 import { OmapClientEvent, IHttpClient, AdPodInsertionRequest, AdPod, Ad } from "@ygoto3/omap-core";
+import { Ad as ParserAd } from '@ygoto3/omap-vast-parser';
 
 
 const test = suite('IABClient');
@@ -14,6 +15,7 @@ test('adTagUrl is vmap', async () => {
     
     let content_pause_requested_count = 0;
     let content_resume_requested_count = 0;
+    let content_can_play_count = 0;
     let ad_pod: AdPod;
     let ad: Ad;
 
@@ -53,6 +55,9 @@ test('adTagUrl is vmap', async () => {
     });
     adClient.on(OmapClientEvent.CONTENT_RESUME_REQUESTED, () => {
         content_resume_requested_count++;
+    });
+    adClient.on(OmapClientEvent.CONTENT_CAN_PLAY, () => {
+        content_can_play_count++;
     });
     adClient.on(OmapClientEvent.ALL_ADS_COMPLETED, () => {});
     adClient.on(OmapClientEvent.LOADED, () => vmap_loaded.resolve());
@@ -382,7 +387,7 @@ test('adTagUrl is vmap', async () => {
         adClient.notifyAdPodEnded();
     }
 
-    assert.is(content_resume_requested_count, 1, 'Content resume should be requested');
+    assert.is(content_can_play_count, 1, 'Content can play should be notified');
 
     adClient.notifyCurrentTime(15);
     await midroll_1.promise;
@@ -418,7 +423,28 @@ test('adTagUrl is vmap', async () => {
         adClient.notifyAdPodEnded();
     }
 
-    assert.is(content_resume_requested_count, 2, 'Content resume should be requested');
+    assert.is(content_resume_requested_count, 1, 'Content resume should be requested');
+});
+
+test('sort ads by sequence', async () => {
+    const ads: ParserAd[] = [];
+    const total = 11;
+    for (var i = 1; i < total; i++) {
+        const sequence = total - i;
+        const ad = new ParserAd(`${sequence}__id`, sequence % 2 === 1 || sequence === 6 ? void 0 : sequence);
+        ads.push(ad);
+    }
+    const sorted = sortAdsBySequence(ads);
+    assert.equal(sorted[0].sequence, void 0);
+    assert.equal(sorted[1].sequence, 2);
+    assert.equal(sorted[2].sequence, void 0);
+    assert.equal(sorted[3].sequence, 4);
+    assert.equal(sorted[4].sequence, void 0);
+    assert.equal(sorted[5].sequence, void 0);
+    assert.equal(sorted[6].sequence, void 0);
+    assert.equal(sorted[7].sequence, 8);
+    assert.equal(sorted[8].sequence, void 0);
+    assert.equal(sorted[9].sequence, 10);
 });
 
 type GetFunction = (url: string) => Promise<string>;
