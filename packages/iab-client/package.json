@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-iab-client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Open Media Ad Player IAB Client",
   "main": "./dist/iab-client/src/index.js",
   "types": "./dist/iab-client/src/index.d.ts",
