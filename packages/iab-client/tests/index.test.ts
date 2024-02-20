@@ -16,7 +16,9 @@ test('adTagUrl is vmap', async () => {
     let content_pause_requested_count = 0;
     let content_resume_requested_count = 0;
     let content_can_play_count = 0;
+    let ad_pod_preparation_requested_count = 0;
     let ad_pod: AdPod;
+    let ad_pod_prepared: AdPod;
     let ad: Ad;
 
     const vmap_loaded = createPromise();
@@ -80,6 +82,10 @@ test('adTagUrl is vmap', async () => {
     adClient.on(OmapClientEvent.LOAD_ERROR, () => {});
     adClient.on(OmapClientEvent.STARTED, () => {});
     adClient.on(OmapClientEvent.COMPLETE, () => {});
+    adClient.on(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, (adPodInsertionRequest: AdPodInsertionRequest) => {
+        ad_pod_prepared = adPodInsertionRequest.adPod;
+        ad_pod_preparation_requested_count++;
+    });
     adClient.on(OmapClientEvent.AD_POD_INSERTION_REQUESTED, (adPodInsertionRequest: AdPodInsertionRequest) => {
         ad_pod = adPodInsertionRequest.adPod;
     });
@@ -449,7 +455,9 @@ test('adTagUrl is vmap', async () => {
     
     adClient.notifyCurrentTime(0);
     await preroll_1.promise;
-    assert.is(content_pause_requested_count, 1);
+
+    await wait(); // CONTENT_PAUSE_REQUESTED is called asynchronously
+    assert.is(content_pause_requested_count, 1, 'Content pause should be requested');
 
     // 1st ad
     ad = ad_pod!.ads[0];
@@ -524,11 +532,19 @@ test('adTagUrl is vmap', async () => {
 
     assert.is(content_can_play_count, 1, 'Content can play should be notified');
 
+    adClient.notifyCurrentTime(10);
+    await wait(); // AD_POD_PREPARATION_REQUESTED is called asynchronously
+    assert.is(ad_pod_preparation_requested_count, 1, 'Ad pod preparation should be requested');
+
     adClient.notifyCurrentTime(15);
     await midroll_1.promise;
 
+    await wait(); // CONTENT_PAUSE_REQUESTED is called asynchronously
+    assert.is(content_pause_requested_count, 2, 'Content pause should be requested');
+
     // midroll 1 - 1st ad
     ad = ad_pod!.ads[0];
+    assert.is(ad.sequence, ad_pod_prepared!.ads[0].sequence, 'Ad should be the same as the one prefetched');
     
     adClient.notifyAdStarted(ad);
     await midroll_1_ad_1_impression_1.promise;
@@ -560,11 +576,19 @@ test('adTagUrl is vmap', async () => {
 
     assert.is(content_resume_requested_count, 1, 'Content resume should be requested');
 
+    adClient.notifyCurrentTime(25);
+    await wait(); // AD_POD_PREPARATION_REQUESTED is called asynchronously
+    assert.is(ad_pod_preparation_requested_count, 2, 'Ad pod preparation should be requested');
+
     adClient.notifyCurrentTime(30);
     await midroll_2.promise;
 
+    await wait(); // CONTENT_PAUSE_REQUESTED is called asynchronously
+    assert.is(content_pause_requested_count, 3, 'Content pause should be requested');
+
     // midroll 2 - 1st ad
     ad = ad_pod!.ads[0];
+    assert.is(ad.sequence, ad_pod_prepared!.ads[0].sequence, 'Ad should be the same as the one prefetched');
     
     adClient.notifyAdStarted(ad);
     await midroll_2_ad_1_impression_1.promise;
@@ -592,6 +616,7 @@ test('adTagUrl is vmap', async () => {
 
     // midroll 2 - 2nd ad
     ad = ad_pod!.ads[1];
+    assert.is(ad.sequence, ad_pod_prepared!.ads[1].sequence, 'Ad should be the same as the one prefetched');
     
     adClient.notifyAdStarted(ad);
     await midroll_2_ad_2_impression_1.promise;
@@ -668,5 +693,9 @@ function createPromise(): { promise: Promise<void>, resolve: () => void, reject:
         reject: () => {}
     };
 };
+
+function wait(): Promise<void> {
+    return new Promise<void>((resolve) => setTimeout(resolve, 10));
+}
 
 test.run();

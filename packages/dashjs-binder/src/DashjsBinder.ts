@@ -14,6 +14,7 @@ import type {
 } from '@ygoto3/omap-core';
 import { Debug } from '../../utils/src';
 import type dashjs from 'dashjs';
+import Prefetchable from './Prefetchable';
 
 /**
  * Dash.js binder for OMAP clients.
@@ -57,6 +58,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
         this.onAdProgress = this.onAdProgress.bind(this);
         this.onAdSkippable = this.onAdSkippable.bind(this);
         this._onAdInsertionRequested = this._onAdInsertionRequested.bind(this);
+        this._onAdPreparationRequested = this._onAdPreparationRequested.bind(this);
 
         this._adManifestReady = new Promise((resolve, reject) => {
             this._adManifestReadyResolve = resolve;
@@ -107,6 +109,8 @@ export default class OmapDashjsBinder implements IOmapBinder {
         });
 
         this.omapClient.on(OmapClientEvent.AD_POD_INSERTION_REQUESTED, this._onAdInsertionRequested);
+
+        this.omapClient.on(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, this._onAdPreparationRequested);
 
         // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
         this.dashjs.on('playbackTimeUpdated', this.onTimeUpdate);
@@ -285,6 +289,12 @@ export default class OmapDashjsBinder implements IOmapBinder {
         numOfAds: number,
         remainingTime: number,
     }> = {};
+    private _prefetchable = new Prefetchable();
+
+    private _onAdPreparationRequested(adPodInsertionRequest: AdPodInsertionRequest): void {
+        Debug.log("AdPreparationRequested");
+        this._prefetchNextAd(adPodInsertionRequest.adPod, 0);
+    }
 
     private _onAdInsertionRequested(adPodInsertionRequest: AdPodInsertionRequest): void {
         Debug.log("AdInsertionRequested");
@@ -300,6 +310,37 @@ export default class OmapDashjsBinder implements IOmapBinder {
             this.onAdPodStarted(adPodInsertionRequest.adPod, this.adDisplayContainer);
             this.emit(OmapBinderEvent.AD_POD_STARTED);    
         }
+    }
+
+    private async _prefetchNextAd(adPod: AdPod, idx: number): Promise<void> {
+        if (adPod.ads.length === 0) return;
+
+        const ad = adPod.ads[idx];
+        if (ad.adCreatives.length === 0) return;
+
+        const adVideoElement = this.adVideoElement!;
+        if (adVideoElement === null) return;
+
+        let contentVideoElement: HTMLVideoElement | undefined;
+        let videoHeight: number = NaN;
+        let height: number = NaN
+        if (this.dashjs.isReady()) {
+            contentVideoElement = this.dashjs.getVideoElement();
+            videoHeight = contentVideoElement.videoHeight;
+            height = videoHeight ? videoHeight : contentVideoElement.clientHeight;
+        }
+
+        // Select only the first ad creative.
+        const adCreative = ad.adCreatives[0];
+
+        // Select the media file with the height larget than and closest to the content video.
+        let adMediaFile = adCreative.adMediaFiles
+            .filter((adMediaFile) => adMediaFile.height >= height)
+            .sort((a, b) => (a.height - height) - (b.height - height))[0] ||
+            adCreative.adMediaFiles.sort((a, b) => b.height - a.height)[0];
+
+        const url = adMediaFile.uri;
+        this._prefetchable.prefetch(url);
     }
 
     private _playNextAd(adPod: AdPod, idx: number): boolean {
@@ -345,20 +386,29 @@ export default class OmapDashjsBinder implements IOmapBinder {
             adCreative.adMediaFiles.sort((a, b) => b.height - a.height)[0];
 
         const url = adMediaFile.uri;
-        adVideoElement.src = url;
-        adVideoElement.currentTime = 0;
-        if (ad.skipOffset === 0) {
-            this.onAdSkippable(ad, adDisplayContainer, 0, adPod.ads.length);
-        }
-        Debug.log("ad playing: " + idx);
-        adVideoElement.play();
+        this._prefetchable.fetch(url)
+            .then((response) => response.blob())
+            .then((mediaData) => {
+                adVideoElement.src = URL.createObjectURL(mediaData);
+                adVideoElement.currentTime = 0;
+                if (ad.skipOffset === 0) {
+                    this.onAdSkippable(ad, adDisplayContainer, 0, adPod.ads.length);
+                }
+                Debug.log("ad playing: " + idx);
+                adVideoElement.play();
+            });
+        
 
         let playingCount = 0;
 
         const onPlaying = () => {
             if (playingCount++ > 0) return;
+            URL.revokeObjectURL(adVideoElement.src);
             this.onAdStarted(ad, adDisplayContainer);
             this.omapClient?.notifyAdStarted(ad);
+            if (idx + 1 < adPod.ads.length) {
+                this._prefetchNextAd(adPod, idx + 1);
+            }
         };
         const onTimeupdate = () => {
             let currentTime = NaN;
@@ -387,6 +437,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
             }
         }
         const onError = () => {
+            URL.revokeObjectURL(adVideoElement.src);
             this._endAdPod();
             this.omapClient?.notifyAdPlaybackError(ad);
         }
