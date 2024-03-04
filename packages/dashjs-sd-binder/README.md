@@ -19,7 +19,7 @@ $ npm install @ygoto3/omap-dashjs-sd-binder --save
 Then you can bind any OMAP client to dash.js.
 
 ```ts
-import { OmapDashjsSDBinder } from ''@ygoto3/omap-dashjs-binder';
+import { OmapDashjsSDBinder } from '@ygoto3/omap-dashjs-sd-binder';
 
 const player = dashjs.MediaPlayer().create();
 const adDisplayContainer = document.getElementById('ad-display-container') as HTMLDivElement;

@@ -1,4 +1,5 @@
 import { default as Ad } from "./Ad";
+import { default as AdBreak } from "./AdBreak";
 import { default as AdCreative } from "./AdCreative";
 import { default as AdInformation } from "./AdInformation";
 import { default as AdInformationBuilder } from "./AdInformationBuilder";
@@ -19,6 +20,7 @@ import type { default as TOmapClientEvent } from "./TClientEvent";
 
 export {
     Ad,
+    AdBreak,
     AdCreative,AdInformation,
     AdInformationBuilder,
     AdMediaFile,

@@ -29,28 +29,29 @@ export default class OmapDashjsSDBinder extends OmapDashjsBinder implements IOma
         super(player, adDisplayContainer, adVideoElement);
     }
 
+    protected lastPlayheadTime: number = NaN;
+
     protected override onContentPauseRequested(): void {
         Debug.log("ContentPauseRequested");
         super.onContentPauseRequested();
         if (this.dashjs.isReady()) {
             this._manifest = this.dashjs.getSource();
-            this._currentTime = this.dashjs.time();
+            this.lastPlayheadTime = this.dashjs.time();
         }
     }
 
     protected override onContentResumeRequested(): void {
         Debug.log("ContentResumeRequested");
-        const manifest = this._manifest;
-        if (manifest === undefined) return;
+        if (typeof this._manifest === 'undefined') return;
         if (this.dashjs.isReady()) {
+            const manifest = this.dashjs.getDashAdapter().getMpd().manifest;
             // Reattach the source
             // to resume the content after the ad is played where only a single decoder is available.
-            this.dashjs.attachSource(manifest, this._currentTime);
+            this.dashjs.attachSource(manifest, this.lastPlayheadTime);
         }
         super.onContentResumeRequested();
     }
 
-    private _currentTime: number = NaN;
     private _manifest: string | object | undefined;
 
 }
