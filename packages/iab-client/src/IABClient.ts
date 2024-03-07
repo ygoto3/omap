@@ -4,6 +4,7 @@ import {
     AdPodInsertionRequest,
     AdCreative, AdMediaFile,
     Ad as AdObj,
+    AdBreak as AdBreakObj,
     AdPod,
     type IHttpClient,
     DefaultHttpClient,
@@ -66,11 +67,12 @@ export default class OmapIABClient implements IOmapClient {
     on(type: typeof OmapClientEvent.CONTENT_PAUSE_REQUESTED, listener: () => void): void;
     on(type: typeof OmapClientEvent.CONTENT_RESUME_REQUESTED, listener: () => void): void;
     on(type: typeof OmapClientEvent.ALL_ADS_COMPLETED, listener: () => void): void;
-    on(type: typeof OmapClientEvent.LOADED, listener: () => void): void;
+    on(type: typeof OmapClientEvent.LOADED, listener: (adBreaks: AdBreakObj[]) => void): void;
     on(type: typeof OmapClientEvent.LOAD_ERROR, listener: () => void): void;
     on(type: typeof OmapClientEvent.STARTED, listener: () => void): void;
     on(type: typeof OmapClientEvent.COMPLETE, listener: () => void): void;
     on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+    on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, listener: () => void): void;
     on(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     on(type: TOmapClientEvent, listener: (...args: any[]) => void): void {
         this._eventListeners.push([ type, listener ]);
@@ -80,12 +82,13 @@ export default class OmapIABClient implements IOmapClient {
     off(type: typeof OmapClientEvent.CONTENT_PAUSE_REQUESTED, listener: () => void): void;
     off(type: typeof OmapClientEvent.CONTENT_RESUME_REQUESTED, listener: () => void): void;
     off(type: typeof OmapClientEvent.ALL_ADS_COMPLETED, listener: () => void): void;
-    off(type: typeof OmapClientEvent.LOADED, listener: () => void): void;
+    off(type: typeof OmapClientEvent.LOADED, listener: (adBreaks: AdBreakObj[]) => void): void;
     off(type: typeof OmapClientEvent.LOAD_ERROR, listener: () => void): void;
     off(type: typeof OmapClientEvent.STARTED, listener: () => void): void;
     off(type: typeof OmapClientEvent.COMPLETE, listener: () => void): void;
-    off(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+    off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, listener: () => void): void;
+    off(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
     off(type: TOmapClientEvent, listener: (...args: any[]) => void): void {
         this._eventListeners = this._eventListeners.filter((eventListener) => {
             if (eventListener[0] === type && eventListener[1] === listener) {
@@ -208,6 +211,12 @@ export default class OmapIABClient implements IOmapClient {
         });
     }
 
+    hasAdPodInsertionAt(time: number): boolean {
+        const adBreaks = this._vmap?.adBreaks || [];
+        const adBreakToInsert = this._adInsertionDecider(time, adBreaks, this._countAdBreakConsumption);
+        return typeof adBreakToInsert !== 'undefined';
+    }
+
     protected prefetchableOffset: number = 5;
     protected prefetchThreshold: number = 2;
     protected httpClient: IHttpClient = new DefaultHttpClient();
@@ -248,12 +257,13 @@ export default class OmapIABClient implements IOmapClient {
     protected emit(type: typeof OmapClientEvent.CONTENT_PAUSE_REQUESTED): void;
     protected emit(type: typeof OmapClientEvent.CONTENT_RESUME_REQUESTED): void;
     protected emit(type: typeof OmapClientEvent.ALL_ADS_COMPLETED): void;
-    protected emit(type: typeof OmapClientEvent.LOADED): void;
+    protected emit(type: typeof OmapClientEvent.LOADED, adBreaks: AdBreakObj[]): void;
     protected emit(type: typeof OmapClientEvent.LOAD_ERROR): void;
     protected emit(type: typeof OmapClientEvent.STARTED): void;
     protected emit(type: typeof OmapClientEvent.COMPLETE): void;
     protected emit(type: typeof OmapClientEvent.AD_POD_PREPARATION_REQUESTED, adPodInsertionRequest: AdPodInsertionRequest): void;
     protected emit(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, adPodInsertionRequest: AdPodInsertionRequest): void;
+    protected emit(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED): void;
     protected emit(type: TOmapClientEvent, ...args: any[]): void {
         Debug.log(`Event type ${ type } is emitted`);
         this._eventListeners
@@ -311,7 +321,20 @@ export default class OmapIABClient implements IOmapClient {
         this.httpClient.get(this._adTagUrl)
             .then(text => {
                 this._vmap = new VMAPParser(text).parse() || void 0;
-                this.emit(OmapClientEvent.LOADED);
+                const adBreaks = this._vmap?.adBreaks.map(adBreak => {
+                    let timeOffset = NaN;
+                    if (adBreak.timeOffset === 'start') {
+                        timeOffset = 0;
+                    } else if (adBreak.timeOffset === 'end') {
+                        timeOffset = Number.MAX_VALUE;
+                    } else {
+                        const timeOffsetArr = adBreak.timeOffset.split(':').map(Number);
+                        timeOffset = timeOffsetArr[0] * 3600 + timeOffsetArr[1] * 60 + timeOffsetArr[2];
+                    }
+                    const id = adBreak.breakId;
+                    return new AdBreakObj(timeOffset, adBreak.breakId);
+                }) || [];
+                this.emit(OmapClientEvent.LOADED, adBreaks);
             })
             .catch(e => {
                 Debug.error(e);
@@ -405,7 +428,8 @@ export default class OmapIABClient implements IOmapClient {
     private async _requestAdPreparation(adBreak: AdBreak): Promise<void> {
         if (this._preparedAdBreak === adBreak) return;
         this._preparedAdBreak = adBreak;
-        const adPod = await this._adBreak2AdPod(adBreak);
+        const adPod = await this._adBreak2AdPod(adBreak)
+            .catch(e => this.emit(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED));
         if (!adPod) return;
         const adPodInsertionRequest = new AdPodInsertionRequest(adPod);
         this.emit(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, adPodInsertionRequest);
@@ -414,7 +438,8 @@ export default class OmapIABClient implements IOmapClient {
     private async _requestAdInsertion(adBreak: AdBreak): Promise<void> {
         delete this._preparedAdBreak;
         this._registerAdBreakConsumption(adBreak);
-        const adPod = await this._adBreak2AdPod(adBreak);
+        const adPod = await this._adBreak2AdPod(adBreak)
+            .catch(e => this.emit(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED));
         if (!adPod) return;
         const adPodInsertionRequest = new AdPodInsertionRequest(adPod);
         this._playingAd = true;

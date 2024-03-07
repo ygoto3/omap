@@ -10,5 +10,6 @@ export default {
     COMPLETE: 'complete',
     AD_POD_PREPARATION_REQUESTED: 'adPodPreparationRequested',
     AD_POD_INSERTION_REQUESTED: 'adPodInsertionRequested',
+    AD_POD_INSERTION_REQUEST_FAILED: 'adPodInsertionRequestFailed',
 
 } as const;

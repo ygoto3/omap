@@ -6,11 +6,14 @@ import type TBinderState from "./TBinderState";
 /** Interface for OMAP binder implementations */
 export default interface IOmapBinder {
 
-    /** The promise that is resolved when the binder is ready */
-    // readonly ready?: Promise<void>;
-
     /** The binder's state */
     readonly state: TBinderState;
+
+    /**
+     * The tricky media player handler can be provided where some interaction with the media player needs to be done in a tricky way.
+     * In that case, use the tricky media player handler's methods instead of those of the media player itself.
+     */
+    readonly trickyMediaPlayerHandler?: Object;
     
     /**
      * Will bind an OMAP client to the media player that the binder uses.

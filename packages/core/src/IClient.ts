@@ -1,5 +1,6 @@
-import type { AdBreak } from "@ygoto3/omap-vmap-parser";
+import type { AdBreak as ParserAdBreak } from "@ygoto3/omap-vmap-parser";
 import type Ad from "./Ad";
+import type AdBreak from "./AdBreak";
 import type AdCreative from "./AdCreative";
 import type AdPodInsertionRequest from "./AdPodInsertionRequest";
 import type OmapClientEvent from "./ClientEvent";
@@ -58,15 +59,20 @@ export default interface IOmapClient {
     notifyAdPlaybackError(ad: Ad): void;
 
     /**
+     * Use the method to check if the client has ad pod insertion point at the time.
+     */
+    hasAdPodInsertionAt(time: number): boolean;
+
+    /**
      * Will replace ad insertion decider.
      * @param filter the custom ad decider function
      */
     attachAdInsertionDecider(
         filter: (
             currentTime: number,
-            adBreaks: AdBreak[],
-            countAdBreakConsumption: (adBreak: AdBreak
-        ) => number) => AdBreak | undefined
+            adBreaks: ParserAdBreak[],
+            countAdBreakConsumption: (adBreak: ParserAdBreak) => number,
+        ) => ParserAdBreak | undefined
     ): void;
 
     /**
@@ -102,7 +108,7 @@ export default interface IOmapClient {
      * @param type the type of event : `OmapClientEvent.LOADED`
      * @param listener the listener function
      */
-    on(type: typeof OmapClientEvent.LOADED, listener: () => void): void;
+    on(type: typeof OmapClientEvent.LOADED, listener: (adBreaks: AdBreak[]) => void): void;
 
     /**
      * Use the on method to listen for the `LOAD_ERROR` event.
@@ -131,6 +137,13 @@ export default interface IOmapClient {
      * @param listener the listener function
      */
     on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+
+    /**
+     * Use the on method to listen for the `AD_POD_INSERTION_REQUEST_FAILED` event.
+     * @param type the type of event : `OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED`
+     * @param listener the listener function
+     */
+    on(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, listener: () => void): void;
 
     /**
      * Use the on method to listen for the `AD_POD_PREPARATION_REQUESTED` event.
@@ -172,7 +185,7 @@ export default interface IOmapClient {
      * @param type the type of event : `OmapClientEvent.LOADED`
      * @param listener the listener function
      */
-    off(type: typeof OmapClientEvent.LOADED, listener: () => void): void;
+    off(type: typeof OmapClientEvent.LOADED, listener: (adBreaks: AdBreak[]) => void): void;
 
     /**
      * Use the off method to remove listener for the `LOAD_ERROR` event.
@@ -201,6 +214,13 @@ export default interface IOmapClient {
      * @param listener the listener function
      */
     off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUESTED, listener: (adPodInsertionRequest: AdPodInsertionRequest) => void): void;
+
+    /**
+     * Use the off method to remove listener for the `AD_POD_INSERTION_REQUEST_FAILED` event.
+     * @param type the type of event : `OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED`
+     * @param listener the listener function
+     */
+    off(type: typeof OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, listener: () => void): void;
 
     /**
      * Use the off method to remove listener for the `AD_POD_PREPARATION_REQUESTED` event.
