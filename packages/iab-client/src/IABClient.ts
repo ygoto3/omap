@@ -296,14 +296,16 @@ export default class OmapIABClient implements IOmapClient {
             const nextAdBreak = adBreaks[i + 1] as AdBreak | undefined;
             const consumptionCount = countAdBreakConsumption(adBreak);
             if (consumptionCount) continue;
-            if (adBreak.timeOffset === 'start') {
-                return adBreak;
-            } else if (adBreak.timeOffset.includes(':')) {
-                const calcTime = (adBreak: AdBreak) => adBreak.timeOffset.split(':')
+            const calcTime = (adBreak: AdBreak) => adBreak.timeOffset.split(':')
                     .map((timeElm: string, index: number) => {
                         return +timeElm * Math.pow(60, 2 - index);
                     })
                     .reduce((prev: number, curr: number) => curr + prev, 0);
+            if (adBreak.timeOffset === 'start' && (typeof nextAdBreak === 'undefined' || currentTime < calcTime(nextAdBreak))) {
+                // If the adBreak is the first adBreak and the next adBreak is not defined or the current time is less than the next adBreak's time, return the adBreak.
+                return adBreak;
+            } else if (adBreak.timeOffset.includes(':')) {
+                
                 const time = calcTime(adBreak);
                 let nextTime = Number.MAX_VALUE;
                 if (nextAdBreak && nextAdBreak.timeOffset.includes(':')) {

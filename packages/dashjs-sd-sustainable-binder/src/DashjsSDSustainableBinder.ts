@@ -49,7 +49,15 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         return {
 
             get duration(): number {
-                return me.dashjs.getDashAdapter().getMpd().mediaPresentationDuration;
+                let duration = NaN;
+                const dashAdapter = me.dashjs.getDashAdapter();
+                if (dashAdapter) {
+                    duration = dashAdapter.getMpd().mediaPresentationDuration;
+                }
+                if (isNaN(duration)) {
+                    duration = me._periodSplitInfoList.reduce((acc, psi) => acc + psi.duration, 0);
+                }
+                return duration;
             },
 
             seek: this._seek.bind(this),
@@ -60,11 +68,6 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     override bind(omapClient: IOmapClient): void {
         super.bind(omapClient);
 
-        this.omapClient?.on(OmapClientEvent.LOADED, adBreaks => {
-            Debug.log('OmapClientEvent.LOADED');
-            this._adBreaks = adBreaks;
-        });
-
         this.omapClient?.on(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, () => {
             Debug.log('OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED');
             this._restart(this._seekingPlayheadTimeBeyondAdBreak);
@@ -74,7 +77,7 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         this.dashjs.on('manifestLoaded', (e: dashjs.ManifestLoadedEvent) => {
             Debug.log('MANIFEST_LOADED');
             
-            const points = this._adBreaks
+            const points = this.adBreaks
                 .map(adBreak => adBreak.offsetTime)
                 .reduce((acc, val) => {
                     if (val === 0) return acc;
@@ -136,7 +139,6 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         this._restart(this._seekingPlayheadTimeBeyondAdBreak);
     }
 
-    private _adBreaks: AdBreak[] = [];
     private _periodSplitInfoList: PeriodSplitInfo[] = [];
     private _currentPeriodSplitIndex = -1;
     private _currentPointIndex = -1;
