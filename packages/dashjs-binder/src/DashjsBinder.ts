@@ -10,7 +10,8 @@ import type {
     IOmapClient,
     IOmapBinder,
     TOmapBinderState,
-    TOmapBinderEvent
+    TOmapBinderEvent,
+    AdBreak
 } from '@ygoto3/omap-core';
 import { Debug } from '../../utils/src';
 import type dashjs from 'dashjs';
@@ -90,8 +91,9 @@ export default class OmapDashjsBinder implements IOmapBinder {
             Debug.log('OmapClientEvent.ALL_ADS_COMPLETED');
         });
 
-        this.omapClient.on(OmapClientEvent.LOADED, () => {
+        this.omapClient.on(OmapClientEvent.LOADED, adBreaks => {
             Debug.log('OmapClientEvent.LOADED');
+            this.adBreaks = adBreaks;
             this._adManifestReadyResolve?.();
         });
 
@@ -111,6 +113,27 @@ export default class OmapDashjsBinder implements IOmapBinder {
         this.omapClient.on(OmapClientEvent.AD_POD_INSERTION_REQUESTED, this._onAdInsertionRequested);
 
         this.omapClient.on(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, this._onAdPreparationRequested);
+
+        // dashjs.MediaPlayer.events.PLAYBACK_STARTED = 'playbackStarted'
+        this.dashjs.on('playbackStarted', () => {
+            Debug.log('playbackStarted');
+            const video = this.dashjs.getVideoElement();
+            
+            const alreadyRegisteredTrack = [].find.call(video.textTracks, (track: TextTrack) => track.label === AD_BREAKS_TRACK_LABEL);
+            if (alreadyRegisteredTrack) return;
+
+            // Register a text track to notify ad break timings.
+            const newTrack = video.addTextTrack('metadata', AD_BREAKS_TRACK_LABEL);
+            newTrack.mode = 'hidden';
+            this.adBreaks.forEach(adBreak => {
+                const cue = new (window.VTTCue || window.TextTrackCue)(adBreak.offsetTime, adBreak.offsetTime, '');
+                cue.addEventListener('enter', e => {
+                    const c = e.target as TextTrackCue;
+                    this.omapClient?.notifyCurrentTime(c.startTime);
+                });
+                newTrack.addCue(cue);
+            });
+        });
 
         // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
         this.dashjs.on('playbackTimeUpdated', this.onTimeUpdate);
@@ -197,6 +220,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     protected omapClient?: IOmapClient;
     protected adDisplayContainer: HTMLElement;
     protected adVideoElement?: HTMLVideoElement;
+    protected adBreaks: AdBreak[] = [];
 
     protected emit(type: typeof OmapBinderEvent.AD_POD_STARTED): void;
     protected emit(type: typeof OmapBinderEvent.AD_POD_ENDED): void;
@@ -251,6 +275,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
 
     protected onAdEnded(ad: Ad, adDisplayContainer: HTMLElement): void {
         Debug.log('AdEnded');
+        this.emit(OmapBinderEvent.AD_ENDED, ad);
     }
 
     protected onAdProgress(ad: Ad, adDisplayContainer: HTMLElement, adCurrentTime: number, numOfAds: number): void {
@@ -397,7 +422,6 @@ export default class OmapDashjsBinder implements IOmapBinder {
                 Debug.log("ad playing: " + idx);
                 adVideoElement.play();
             });
-        
 
         let playingCount = 0;
 
@@ -412,10 +436,8 @@ export default class OmapDashjsBinder implements IOmapBinder {
         };
         const onTimeupdate = () => {
             let currentTime = NaN;
-            let duration = NaN;
             if (adVideoElement) {
                 currentTime = adVideoElement.currentTime;
-                duration = adVideoElement.duration;
             }
             this.onAdProgress(ad, adDisplayContainer, currentTime, adPod.ads.length);
             if (ad.skipOffset > 0 && currentTime >= ad.skipOffset) {
@@ -436,8 +458,22 @@ export default class OmapDashjsBinder implements IOmapBinder {
                 this._playNextAd(adPod, idx + 1);
             }
         }
-        const onError = () => {
-            URL.revokeObjectURL(adVideoElement.src);
+        const onError = (e: ErrorEvent) => {
+            const src = adVideoElement.src;
+            URL.revokeObjectURL(adVideoElement.src);            
+            if (e.target) {
+                const target = e.target as HTMLVideoElement;
+                const MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
+                if (!target.error) {
+                    // If the error is not caused by the media file, ignore the event.
+                    return;
+                } else if (target.error.code === MEDIA_ERR_SRC_NOT_SUPPORTED && src.indexOf('blob:') === 0) {
+                    // If the media file is not supported, try to play the original URL.
+                    adVideoElement.src = url;
+                    adVideoElement.play();
+                    return;                   
+                }
+            }
             this._endAdPod();
             this.omapClient?.notifyAdPlaybackError(ad);
         }
@@ -471,3 +507,5 @@ export default class OmapDashjsBinder implements IOmapBinder {
     }
 
 }
+
+const AD_BREAKS_TRACK_LABEL = 'omap_ad_breaks';
