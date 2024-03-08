@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-dashjs-sd-binder",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Open Media Ad Player Single Decoder Dash.js Binder",
   "main": "./dist/dashjs-sd-binder/src/index.js",
   "types": "./dist/dashjs-sd-binder/src/index.d.ts",
@@ -19,8 +19,8 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.1",
-    "@ygoto3/omap-dashjs-binder": "^0.0.2"
+    "@ygoto3/omap-core": "^0.0.2",
+    "@ygoto3/omap-dashjs-binder": "^0.0.3"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",

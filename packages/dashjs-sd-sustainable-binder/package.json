@@ -20,8 +20,8 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.1",
-    "@ygoto3/omap-dashjs-sd-binder": "^0.0.2"
+    "@ygoto3/omap-core": "^0.0.2",
+    "@ygoto3/omap-dashjs-sd-binder": "^0.0.3"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",
