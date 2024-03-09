@@ -44,8 +44,8 @@ omapBinder.trickyMediaPlayerHandler.duration;
 
 OmapDashjsSDSustainableBinder's manifest manipulation depends on the format of the manifest dashjs plays.  Which mpd format it currently supports is shown below. 
 
-| Type | SegmentTemplate only | SegmentTimeline $Number$ | SegmentTimeline $Time$ | SegmentList | SegmentBase |
-| --- | --- | --- | --- | --- | --- | --- |
-| Video On-Demand | - | **Y** | **Y** | - | - |
-| Live | - | - | - | - | - |
-| Event | - | - | - | - | - |
+|Type           |SegmentTemplate only|SegmentTimeline $Number$|SegmentTimeline $Time$|SegmentList|SegmentBase|
+|:-------------:|:------------------:|:----------------------:|:--------------------:|:---------:|:---------:|
+|Video On-Demand| -                  |**Y**                   |**Y**                 | -         | -         |
+|Live           | -                  | -                      | -                    | -         | -         |
+|Event          | -                  | -                      | -                    | -         | -         |
