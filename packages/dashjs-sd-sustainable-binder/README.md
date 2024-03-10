@@ -1,4 +1,4 @@
-# @ygoto3/omap-dashjs-sd-binder
+# @ygoto3/omap-dashjs-sd-sustainable-binder
 
 ## Overview
 
