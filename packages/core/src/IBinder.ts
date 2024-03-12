@@ -79,7 +79,7 @@ export default interface IOmapBinder {
      */
     on(
         type: typeof BinderEvent.AD_INFO_UPDATED,
-        listener: (sequence: number, numOfAds: number, remainingTime: number) => void
+        listener: (sequence: number, numOfAds: number, remainingTime: number, duration: number) => void
     ): void;
 
     /**
@@ -139,7 +139,7 @@ export default interface IOmapBinder {
      */
     off(
         type: typeof BinderEvent.AD_INFO_UPDATED,
-        listener: (sequence: number, numOfAds: number, remainingTime: number) => void
+        listener: (sequence: number, numOfAds: number, remainingTime: number, duration: number) => void
     ): void;
 
     /**

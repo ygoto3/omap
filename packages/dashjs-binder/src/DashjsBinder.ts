@@ -173,7 +173,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     ): void;
     on(
         type: typeof OmapBinderEvent.AD_INFO_UPDATED,
-        listener: (sequence: number, numOfAds: number, remainingTime: number) => void
+        listener: (sequence: number, numOfAds: number, remainingTime: number, duration: number) => void
     ): void;
     on(
         type: typeof OmapBinderEvent.AD_SKIPPABLE_STATE_CHANGED,
@@ -201,7 +201,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     ): void;
     off(
         type: typeof OmapBinderEvent.AD_INFO_UPDATED,
-        listener: (sequence: number, numOfAds: number, remainingTime: number) => void
+        listener: (sequence: number, numOfAds: number, remainingTime: number, duration: number) => void
     ): void;
     off(
         type: typeof OmapBinderEvent.AD_SKIPPABLE_STATE_CHANGED,
@@ -226,7 +226,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     protected emit(type: typeof OmapBinderEvent.AD_POD_ENDED): void;
     protected emit(type: typeof OmapBinderEvent.AD_STARTED, ad: Ad): void;
     protected emit(type: typeof OmapBinderEvent.AD_ENDED, ad: Ad): void;
-    protected emit(type: typeof OmapBinderEvent.AD_INFO_UPDATED, sequence: number, numOfAds: number, remainingTime: number): void;
+    protected emit(type: typeof OmapBinderEvent.AD_INFO_UPDATED, sequence: number, numOfAds: number, remainingTime: number, duration: number): void;
     protected emit(type: typeof OmapBinderEvent.AD_SKIPPABLE_STATE_CHANGED): void;
     protected emit(type: TOmapBinderEvent, ...args: any[]): void {
         Debug.log(`Event type ${ type } is emitted`);
@@ -291,7 +291,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
             this._lastAdInfo.sequence = sequence;
             this._lastAdInfo.numOfAds = numOfAds;
             this._lastAdInfo.remainingTime = remainingTime;
-            this.emit(OmapBinderEvent.AD_INFO_UPDATED, sequence, numOfAds, remainingTime);
+            this.emit(OmapBinderEvent.AD_INFO_UPDATED, sequence, numOfAds, remainingTime, duration);
         }
     }
 
