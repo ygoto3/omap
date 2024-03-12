@@ -9,6 +9,11 @@ import type OmapClientEvent from "./ClientEvent";
 export default interface IOmapClient {
 
     /**
+     * Will destroy the OMAP client.
+     */
+    destroy(): void;
+
+    /**
      * Will start playing ads.
      * After calling this method, the client will start to request ads.
      */

@@ -14,6 +14,11 @@ export default interface IOmapBinder {
      * In that case, use the tricky media player handler's methods instead of those of the media player itself.
      */
     readonly trickyMediaPlayerHandler?: Object;
+
+    /**
+     * Will destroy the OMAP binder.
+     */
+    destroy(): void;
     
     /**
      * Will bind an OMAP client to the media player that the binder uses.

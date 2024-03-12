@@ -41,6 +41,9 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
 
     constructor(player: dashjs.MediaPlayerClass, adDisplayContainer: HTMLElement, adVideoElement?: HTMLVideoElement) {
         super(player, adDisplayContainer, adVideoElement);
+
+        this._onManifestLoaded = this._onManifestLoaded.bind(this);
+        this._onAdPodInsertionRequestFailed = this._onAdPodInsertionRequestFailed.bind(this);
     }
 
     get trickyMediaPlayerHandler(): ITrickyMediaPlayerHandler {
@@ -65,73 +68,18 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         };
     }
 
+    override destroy(): void {
+        this.__unbind();
+        super.destroy();
+    }
+
     override bind(omapClient: IOmapClient): void {
         super.bind(omapClient);
 
-        this.omapClient?.on(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, () => {
-            Debug.log('OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED');
-            this._restart(this._seekingPlayheadTimeBeyondAdBreak);
-        });
+        this.omapClient?.on(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, this._onAdPodInsertionRequestFailed);
 
         // dashjs.MediaPlayer.events.MANIFEST_LOADED === 'manifestLoaded'
-        this.dashjs.on('manifestLoaded', (e: dashjs.ManifestLoadedEvent) => {
-            Debug.log('MANIFEST_LOADED');
-            
-            const points = this.adBreaks
-                .map(adBreak => adBreak.offsetTime)
-                .reduce((acc, val) => {
-                    if (val === 0) return acc;
-                    if (!~acc.indexOf(val)) acc.push(val);
-                    return acc;
-                }, [] as number[])
-                .sort((a, b) => a - b);
-
-            const startTime = isNaN(this.lastPlayheadTime) ? 0 : this.lastPlayheadTime;
-            const pointIndex = points.findIndex(p => p > startTime);
-
-            if (pointIndex === -1) return;
-
-            const mpd = e.data as Manifest;
-            const Period_asArray = mpd.Period_asArray as Period[];
-            this._originalPeriods = deepCopy(Period_asArray);
-            
-            const [psis, periodIndex] = Period_asArray.reduce((acc, period: Period, idx) => {
-                const [psis, foundIndex, prevPeriodEndTime, points, startTime] = acc;
-                if (foundIndex !== -1) return acc;
-                const offsetPoints = points
-                    .map(p => p - prevPeriodEndTime)
-                    .filter(p => p >= 0);
-                const psi = periodSplitInfo(period, offsetPoints);
-                psis.push(psi);
-
-                let newFoundIndex = -1;
-                if (psi.points.length) {
-                    newFoundIndex = idx;
-                }
-                const newAccTime = psi.duration + prevPeriodEndTime;
-                return [psis, newFoundIndex, newAccTime, points, startTime];
-            }, [
-                [] /* period split info list */,
-                -1 /* found index */,
-                0 /* acculated time */,
-                points,
-                startTime,
-            ] as [PeriodSplitInfo[], number, number, number[], number]);
-
-            if (periodIndex === -1) return;
-            const period = Period_asArray[periodIndex];
-            const psi = psis[periodIndex];
-            const mediaSplitPoint = psi.points[pointIndex];
-            if (typeof mediaSplitPoint === 'undefined') return;
-            const shortenedPeriod = shortenPeriodAt(period, mediaSplitPoint);
-            const remainingPeriods = Period_asArray.slice(0, periodIndex);
-            Period_asArray.length = 0;
-            Period_asArray.push(...remainingPeriods, shortenedPeriod);
-
-            this._periodSplitInfoList = psis;
-            this._currentPeriodSplitIndex = periodIndex;
-            this._currentPointIndex = pointIndex;
-        });
+        this.dashjs.on('manifestLoaded', this._onManifestLoaded);
     }
 
     protected override onContentResumeRequested(): void {
@@ -184,6 +132,78 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         } else {
             this._restart(time);
         }
+    }
+
+    private __unbind(): void {
+        if (typeof this.omapClient !== 'undefined') {
+            this.omapClient.off(OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED, this._onAdPodInsertionRequestFailed);
+        }
+        // dashjs.MediaPlayer.events.MANIFEST_LOADED === 'manifestLoaded'
+        this.dashjs.off('manifestLoaded', this._onManifestLoaded);
+    }
+
+    private _onAdPodInsertionRequestFailed(): void {
+        Debug.log('OmapClientEvent.AD_POD_INSERTION_REQUEST_FAILED');
+        this._restart(this._seekingPlayheadTimeBeyondAdBreak);
+    }
+
+    private _onManifestLoaded(e: dashjs.ManifestLoadedEvent): void {
+        Debug.log('MANIFEST_LOADED');
+            
+        const points = this.adBreaks
+            .map(adBreak => adBreak.offsetTime)
+            .reduce((acc, val) => {
+                if (val === 0) return acc;
+                if (!~acc.indexOf(val)) acc.push(val);
+                return acc;
+            }, [] as number[])
+            .sort((a, b) => a - b);
+
+        const startTime = isNaN(this.lastPlayheadTime) ? 0 : this.lastPlayheadTime;
+        const pointIndex = points.findIndex(p => p > startTime);
+
+        if (pointIndex === -1) return;
+
+        const mpd = e.data as Manifest;
+        const Period_asArray = mpd.Period_asArray as Period[];
+        this._originalPeriods = deepCopy(Period_asArray);
+        
+        const [psis, periodIndex] = Period_asArray.reduce((acc, period: Period, idx) => {
+            const [psis, foundIndex, prevPeriodEndTime, points, startTime] = acc;
+            if (foundIndex !== -1) return acc;
+            const offsetPoints = points
+                .map(p => p - prevPeriodEndTime)
+                .filter(p => p >= 0);
+            const psi = periodSplitInfo(period, offsetPoints);
+            psis.push(psi);
+
+            let newFoundIndex = -1;
+            if (psi.points.length) {
+                newFoundIndex = idx;
+            }
+            const newAccTime = psi.duration + prevPeriodEndTime;
+            return [psis, newFoundIndex, newAccTime, points, startTime];
+        }, [
+            [] /* period split info list */,
+            -1 /* found index */,
+            0 /* acculated time */,
+            points,
+            startTime,
+        ] as [PeriodSplitInfo[], number, number, number[], number]);
+
+        if (periodIndex === -1) return;
+        const period = Period_asArray[periodIndex];
+        const psi = psis[periodIndex];
+        const mediaSplitPoint = psi.points[pointIndex];
+        if (typeof mediaSplitPoint === 'undefined') return;
+        const shortenedPeriod = shortenPeriodAt(period, mediaSplitPoint);
+        const remainingPeriods = Period_asArray.slice(0, periodIndex);
+        Period_asArray.length = 0;
+        Period_asArray.push(...remainingPeriods, shortenedPeriod);
+
+        this._periodSplitInfoList = psis;
+        this._currentPeriodSplitIndex = periodIndex;
+        this._currentPointIndex = pointIndex;
     }
 
 }
