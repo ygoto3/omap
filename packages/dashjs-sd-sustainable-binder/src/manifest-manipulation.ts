@@ -1,8 +1,8 @@
 import type { Period, S, AdaptationSet, Representation, SegmentTemplate, SegmentTimeline } from './dashjs-types';
 
 
-export function periodSplitInfo(period: Period, points: number[]): PeriodSplitInfo {
-    const [mediaSplitPoints, videoDuration, audioDuration] = mediaSplitPointsInAdaptationSets(points, period.AdaptationSet_asArray);
+export function periodSplitInfo(period: Period, points: number[], splitRoomInSecond: number = 0): PeriodSplitInfo {
+    const [mediaSplitPoints, videoDuration, audioDuration] = mediaSplitPointsInAdaptationSets(points, period.AdaptationSet_asArray, splitRoomInSecond);
 
     const periodSplitInfo: PeriodSplitInfo = {
         duration: period.duration || Math.max(videoDuration, audioDuration),
@@ -12,7 +12,7 @@ export function periodSplitInfo(period: Period, points: number[]): PeriodSplitIn
     return periodSplitInfo;
 }
 
-function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: AdaptationSet[]): [MediaSplitPoint[], number, number] {
+function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: AdaptationSet[], splitRoomInSecond: number = 0): [MediaSplitPoint[], number, number] {
 
     const [
         videoSegmentTimelineSplitPoints,
@@ -26,6 +26,7 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
             audioSegmentTimelineSplitPoints,
             prevVideoDuration,
             prevAudioDuration,
+            splitRoomInSecond,
         ] = acc;
 
         const contentType = contentTypeFromAdaptationSet(adaptationSet);
@@ -36,6 +37,7 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
                 audioSegmentTimelineSplitPoints,
                 prevVideoDuration,
                 prevAudioDuration,
+                splitRoomInSecond,
             ];
         }
 
@@ -49,7 +51,7 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
             const [
                 segmentTimelineSplitPoints,
                 totalDuration,
-            ] = segmentTimelineSplitPointsInSArray(points, segmentTimeline.S_asArray, timescale);
+            ] = segmentTimelineSplitPointsInSArray(points, segmentTimeline.S_asArray, timescale, splitRoomInSecond);
 
             let videoDuration = prevVideoDuration;
             let audioDuration = prevAudioDuration;
@@ -66,6 +68,7 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
                 audioSegmentTimelineSplitPoints,
                 videoDuration,
                 audioDuration,
+                splitRoomInSecond,
             ];
         }
 
@@ -74,13 +77,15 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
             audioSegmentTimelineSplitPoints,
             prevVideoDuration,
             prevAudioDuration,
+            splitRoomInSecond,
         ];
     }, [
         [],
         [],
         0,
         0,
-    ] as [SegmentTimelineSplitPoint[], SegmentTimelineSplitPoint[], number, number]);
+        splitRoomInSecond,
+    ] as [SegmentTimelineSplitPoint[], SegmentTimelineSplitPoint[], number, number, number]);
     
     return [
         mediaSplitPointsInSegmentTimelineSplitPoints(points, videoSegmentTimelineSplitPoints, audioSegmentTimelineSplitPoints),
@@ -92,25 +97,28 @@ function mediaSplitPointsInAdaptationSets(points: number[], adaptationSets: Adap
 function segmentTimelineSplitPointsInSArray(
     points: number[],
     sArray: S[],
-    timescale: number = 1
-): [SegmentTimelineSplitPoint[], number, number] {
+    timescale: number = 1,
+    splitRoomInSecond: number = 0,
+): [SegmentTimelineSplitPoint[], number, number, number] {
     return sArray.reduce((acc, s, idx) => {
         const [
             prevSegmentTimelineSplitPoints,
             offsetTime,
             timescale,
+            roomInSecond,
         ] = acc;
         
-        const [segmentTimelineSplitPoints, endTime] = pointsInS(points, s, offsetTime, timescale, idx);
+        const [segmentTimelineSplitPoints, endTime] = pointsInS(points, s, offsetTime, timescale, idx, roomInSecond);
         prevSegmentTimelineSplitPoints.push(...segmentTimelineSplitPoints);
         
-        return [prevSegmentTimelineSplitPoints, endTime, timescale];
+        return [prevSegmentTimelineSplitPoints, endTime, timescale, roomInSecond];
     },
     [
         [],
         0 /* offsetTime */,
         timescale,
-    ] as [SegmentTimelineSplitPoint[], number, number]);
+        splitRoomInSecond,
+    ] as [SegmentTimelineSplitPoint[], number, number, number]);
 }
 
 function pointsInS(
@@ -119,6 +127,7 @@ function pointsInS(
     offset: number,
     timescale: number,
     segmentIndex: number,
+    roomInSecond: number = 0,
 ): [SegmentTimelineSplitPoint[], number] {
     const repeat = s.r || 0;
     const duration = s.d * (repeat + 1);
@@ -133,9 +142,11 @@ function pointsInS(
             segmentTimelineSplitPoints,
             _,
             timescale,
+            __,
+            roomInSecond,
         ] = acc;
 
-        const pointInScale = point * timescale;
+        const pointInScale = (point + roomInSecond) * timescale;
         
         if (offset <= pointInScale && pointInScale <= endTime) {
             let repeatNumber = 0;
@@ -152,14 +163,15 @@ function pointsInS(
             segmentTimelineSplitPoints.push(segmentTimelineSplitPoint);
         }
 
-        return [segmentTimelineSplitPoints, endTime, timescale, segmentIndex];
+        return [segmentTimelineSplitPoints, endTime, timescale, segmentIndex, roomInSecond];
     }, [
         [],
         offset,
         timescale,
         segmentIndex,
+        roomInSecond,
     ] as [
-        SegmentTimelineSplitPoint[], number, number, number
+        SegmentTimelineSplitPoint[], number, number, number, number
     ]);
 
     return [segmentTimelineSplitPoints, accumulatedDuration];
