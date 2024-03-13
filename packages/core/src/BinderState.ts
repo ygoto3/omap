@@ -1,7 +1,7 @@
 export default {
 
-    NOT_BINDED: 'notBinded',
-    BINDED: 'binded',
+    NOT_BOUND: 'notBound',
+    BOUND: 'bound',
     CONTENT_PLAYING: 'contentPlaying',
     AD_PLAYING: 'adPlaying',
 

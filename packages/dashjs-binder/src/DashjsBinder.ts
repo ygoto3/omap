@@ -58,8 +58,16 @@ export default class OmapDashjsBinder implements IOmapBinder {
         this.onAdPodEnded = this.onAdPodEnded.bind(this);
         this.onAdProgress = this.onAdProgress.bind(this);
         this.onAdSkippable = this.onAdSkippable.bind(this);
+        
+        this._onContentCanPlay = this._onContentCanPlay.bind(this);
+        this._onAllAdsCompleted = this._onAllAdsCompleted.bind(this);
+        this._onOmapClientLoaded = this._onOmapClientLoaded.bind(this);
+        this._onOmapClientLoadError = this._onOmapClientLoadError.bind(this);
+        this._onOmapClientStarted = this._onOmapClientStarted.bind(this);
+        this._onOmapClientComplete = this._onOmapClientComplete.bind(this);
         this._onAdInsertionRequested = this._onAdInsertionRequested.bind(this);
         this._onAdPreparationRequested = this._onAdPreparationRequested.bind(this);
+        this._onPlaybackStarted = this._onPlaybackStarted.bind(this);
 
         this._adManifestReady = new Promise((resolve, reject) => {
             this._adManifestReadyResolve = resolve;
@@ -75,74 +83,45 @@ export default class OmapDashjsBinder implements IOmapBinder {
         return this._state;
     }
 
+    destroy(): void {
+        Debug.log('destroy');
+
+        this._unbind();
+        
+        if (typeof this.adVideoElement !== 'undefined') {
+            this._destroyMediaElement(this.adVideoElement);
+        }
+    }
+
     bind(omapClient: IOmapClient): void {
         this.omapClient = omapClient;
 
-        this.omapClient.on(OmapClientEvent.CONTENT_CAN_PLAY, () => {
-            Debug.log('OmapClientEvent.CONTENT_CAN_PLAY');
-            this._playReadyResolve?.();
-        });
-
+        this.omapClient.on(OmapClientEvent.CONTENT_CAN_PLAY, this._onContentCanPlay);
         this.omapClient.on(OmapClientEvent.CONTENT_PAUSE_REQUESTED, this.onContentPauseRequested);
-
         this.omapClient.on(OmapClientEvent.CONTENT_RESUME_REQUESTED, this.onContentResumeRequested);
-
-        this.omapClient.on(OmapClientEvent.ALL_ADS_COMPLETED, () => {
-            Debug.log('OmapClientEvent.ALL_ADS_COMPLETED');
-        });
-
-        this.omapClient.on(OmapClientEvent.LOADED, adBreaks => {
-            Debug.log('OmapClientEvent.LOADED');
-            this.adBreaks = adBreaks;
-            this._adManifestReadyResolve?.();
-        });
-
-        this.omapClient.on(OmapClientEvent.LOAD_ERROR, () => {
-            Debug.log('OmapClientEvent.LOAD_ERROR');
-            this._adManifestReadyReject?.();
-        });
-
-        this.omapClient.on(OmapClientEvent.STARTED, () => {
-            Debug.log('OmapClientEvent.STARTED');
-        });
-
-        this.omapClient.on(OmapClientEvent.COMPLETE, () => {
-            Debug.log('OmapClientEvent.COMPLETE');
-        });
-
+        this.omapClient.on(OmapClientEvent.ALL_ADS_COMPLETED, this._onAllAdsCompleted);
+        this.omapClient.on(OmapClientEvent.LOADED, this._onOmapClientLoaded);
+        this.omapClient.on(OmapClientEvent.LOAD_ERROR, this._onOmapClientLoadError);
+        this.omapClient.on(OmapClientEvent.STARTED, this._onOmapClientStarted);
+        this.omapClient.on(OmapClientEvent.COMPLETE, this._onOmapClientComplete);
         this.omapClient.on(OmapClientEvent.AD_POD_INSERTION_REQUESTED, this._onAdInsertionRequested);
-
         this.omapClient.on(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, this._onAdPreparationRequested);
 
         // dashjs.MediaPlayer.events.PLAYBACK_STARTED = 'playbackStarted'
-        this.dashjs.on('playbackStarted', () => {
-            Debug.log('playbackStarted');
-            const video = this.dashjs.getVideoElement();
-            
-            const alreadyRegisteredTrack = [].find.call(video.textTracks, (track: TextTrack) => track.label === AD_BREAKS_TRACK_LABEL);
-            if (alreadyRegisteredTrack) return;
-
-            // Register a text track to notify ad break timings.
-            const newTrack = video.addTextTrack('metadata', AD_BREAKS_TRACK_LABEL);
-            newTrack.mode = 'hidden';
-            this.adBreaks.forEach(adBreak => {
-                const cue = new (window.VTTCue || window.TextTrackCue)(adBreak.offsetTime, adBreak.offsetTime, '');
-                cue.addEventListener('enter', e => {
-                    const c = e.target as TextTrackCue;
-                    this.omapClient?.notifyCurrentTime(c.startTime);
-                });
-                newTrack.addCue(cue);
-            });
-        });
+        this.dashjs.on('playbackStarted', this._onPlaybackStarted);
 
         // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
         this.dashjs.on('playbackTimeUpdated', this.onTimeUpdate);
 
-        this._state = OmapBinderState.BINDED;
+        this._state = OmapBinderState.BOUND;
     }
 
     async play(startTime: number = 0): Promise<void> {
-        this.omapClient?.play();
+        if (typeof this.omapClient === 'undefined') {
+            throw new Error('No Omap client is bound');
+        }
+        
+        this.omapClient.play();
         await this._adManifestReady;
         this._state = OmapBinderState.CONTENT_PLAYING;
         this.omapClient?.notifyCurrentTime(startTime);
@@ -247,6 +226,10 @@ export default class OmapDashjsBinder implements IOmapBinder {
         Debug.log('ContentCanPlay');
     }
 
+    protected _onAllAdsCompleted(): void {
+        Debug.log('OmapClientEvent.ALL_ADS_COMPLETED');
+    }
+
     protected onContentPauseRequested(): void {
         Debug.log('ContentPauseRequested');
         if (this.dashjs.isReady()) {
@@ -308,7 +291,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     private _eventListeners: [string, (...args: any[]) => void][] = [];
     private _currentAdPod?: AdPod;
     private _keepsAdVideoElement: boolean = false;
-    private _state: TOmapBinderState = OmapBinderState.NOT_BINDED;
+    private _state: TOmapBinderState = OmapBinderState.NOT_BOUND;
     private _lastAdInfo: Partial<{
         sequence: number,
         numOfAds: number,
@@ -335,6 +318,74 @@ export default class OmapDashjsBinder implements IOmapBinder {
             this.onAdPodStarted(adPodInsertionRequest.adPod, this.adDisplayContainer);
             this.emit(OmapBinderEvent.AD_POD_STARTED);    
         }
+    }
+
+    private _onContentCanPlay(): void {
+        Debug.log('OmapClientEvent.CONTENT_CAN_PLAY');
+        this._playReadyResolve?.();
+    }
+
+    private _onOmapClientLoaded(adBreaks: AdBreak[]): void {
+        Debug.log('OmapClientEvent.LOADED');
+        this.adBreaks = adBreaks;
+        this._adManifestReadyResolve?.();
+    }
+
+    private _onOmapClientLoadError(): void {
+        Debug.log('OmapClientEvent.LOAD_ERROR');
+        this._adManifestReadyReject?.();
+    }
+
+    private _onOmapClientStarted(): void {
+        Debug.log('OmapClientEvent.STARTED');
+    }
+
+    private _onOmapClientComplete(): void {
+        Debug.log('OmapClientEvent.COMPLETE');
+    }
+
+    private _onPlaybackStarted(): void {
+        Debug.log('playbackStarted');
+        const video = this.dashjs.getVideoElement();
+        
+        const alreadyRegisteredTrack = [].find.call(video.textTracks, (track: TextTrack) => track.label === AD_BREAKS_TRACK_LABEL);
+        if (alreadyRegisteredTrack) return;
+
+        // Register a text track to notify ad break timings.
+        const newTrack = video.addTextTrack('metadata', AD_BREAKS_TRACK_LABEL);
+        newTrack.mode = 'hidden';
+        this.adBreaks.forEach(adBreak => {
+            const cue = new (window.VTTCue || window.TextTrackCue)(adBreak.offsetTime, adBreak.offsetTime, '');
+            cue.addEventListener('enter', e => {
+                const c = e.target as TextTrackCue;
+                this.omapClient?.notifyCurrentTime(c.startTime);
+            });
+            newTrack.addCue(cue);
+        });
+    }
+
+    private _unbind(): void {
+        if (typeof this.omapClient !== 'undefined') {
+            this.omapClient.off(OmapClientEvent.CONTENT_CAN_PLAY, this._onContentCanPlay);
+            this.omapClient.off(OmapClientEvent.CONTENT_PAUSE_REQUESTED, this.onContentPauseRequested);
+            this.omapClient.off(OmapClientEvent.CONTENT_RESUME_REQUESTED, this.onContentResumeRequested);
+            this.omapClient.off(OmapClientEvent.ALL_ADS_COMPLETED, this._onAllAdsCompleted);
+            this.omapClient.off(OmapClientEvent.LOADED, this._onOmapClientLoaded);
+            this.omapClient.off(OmapClientEvent.LOAD_ERROR, this._onOmapClientLoadError);
+            this.omapClient.off(OmapClientEvent.STARTED, this._onOmapClientStarted);
+            this.omapClient.off(OmapClientEvent.COMPLETE, this._onOmapClientComplete);
+            this.omapClient.off(OmapClientEvent.AD_POD_INSERTION_REQUESTED, this._onAdInsertionRequested);
+            this.omapClient.off(OmapClientEvent.AD_POD_PREPARATION_REQUESTED, this._onAdPreparationRequested);
+            delete this.omapClient;
+        }
+
+        // dashjs.MediaPlayer.events.PLAYBACK_STARTED = 'playbackStarted'
+        this.dashjs.off('playbackStarted', this._onPlaybackStarted);
+
+        // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
+        this.dashjs.off('playbackTimeUpdated', this.onTimeUpdate);
+
+        this._state = OmapBinderState.NOT_BOUND;
     }
 
     private async _prefetchNextAd(adPod: AdPod, idx: number): Promise<void> {

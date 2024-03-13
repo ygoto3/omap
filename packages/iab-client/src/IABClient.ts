@@ -49,6 +49,10 @@ export default class OmapIABClient implements IOmapClient {
         this._init();
     }
 
+    destroy(): void {
+        this._eventListeners.length = 0;
+    }
+
     play(): void {
         this._playing = true;
     }
