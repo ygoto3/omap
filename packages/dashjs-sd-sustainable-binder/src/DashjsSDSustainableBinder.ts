@@ -39,11 +39,12 @@ import { Debug } from '../../utils/src';
  */
 export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder implements IOmapBinder {
 
-    constructor(player: dashjs.MediaPlayerClass, adDisplayContainer: HTMLElement, adVideoElement?: HTMLVideoElement) {
+    constructor(player: dashjs.MediaPlayerClass, adDisplayContainer: HTMLElement, adVideoElement?: HTMLVideoElement, periodManipulationRoom: number = 3) {
         super(player, adDisplayContainer, adVideoElement);
 
         this._onManifestLoaded = this._onManifestLoaded.bind(this);
         this._onAdPodInsertionRequestFailed = this._onAdPodInsertionRequestFailed.bind(this);
+        this._periodManipulationRoom = periodManipulationRoom;
     }
 
     get trickyMediaPlayerHandler(): ITrickyMediaPlayerHandler {
@@ -92,6 +93,7 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     private _currentPointIndex = -1;
     private _originalPeriods: Period[] = [];
     private _seekingPlayheadTimeBeyondAdBreak: number | undefined;
+    private _periodManipulationRoom: number;
 
     private _resetManifest(): Manifest {
         const manifest = this.dashjs.getDashAdapter().getMpd().manifest as Manifest;
@@ -169,12 +171,12 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         this._originalPeriods = deepCopy(Period_asArray);
         
         const [psis, periodIndex] = Period_asArray.reduce((acc, period: Period, idx) => {
-            const [psis, foundIndex, prevPeriodEndTime, points, startTime] = acc;
+            const [psis, foundIndex, prevPeriodEndTime, points, startTime, periodManipulationRoom] = acc;
             if (foundIndex !== -1) return acc;
             const offsetPoints = points
                 .map(p => p - prevPeriodEndTime)
                 .filter(p => p >= 0);
-            const psi = periodSplitInfo(period, offsetPoints);
+            const psi = periodSplitInfo(period, offsetPoints, periodManipulationRoom);
             psis.push(psi);
 
             let newFoundIndex = -1;
@@ -182,14 +184,15 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
                 newFoundIndex = idx;
             }
             const newAccTime = psi.duration + prevPeriodEndTime;
-            return [psis, newFoundIndex, newAccTime, points, startTime];
+            return [psis, newFoundIndex, newAccTime, points, startTime, periodManipulationRoom];
         }, [
             [] /* period split info list */,
             -1 /* found index */,
             0 /* acculated time */,
             points,
             startTime,
-        ] as [PeriodSplitInfo[], number, number, number[], number]);
+            this._periodManipulationRoom
+        ] as [PeriodSplitInfo[], number, number, number[], number, number]);
 
         if (periodIndex === -1) return;
         const period = Period_asArray[periodIndex];
