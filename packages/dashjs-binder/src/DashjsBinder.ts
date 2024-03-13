@@ -113,7 +113,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
         // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
         this.dashjs.on('playbackTimeUpdated', this.onTimeUpdate);
 
-        this._state = OmapBinderState.BINDED;
+        this._state = OmapBinderState.BOUND;
     }
 
     async play(startTime: number = 0): Promise<void> {
@@ -291,7 +291,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     private _eventListeners: [string, (...args: any[]) => void][] = [];
     private _currentAdPod?: AdPod;
     private _keepsAdVideoElement: boolean = false;
-    private _state: TOmapBinderState = OmapBinderState.NOT_BINDED;
+    private _state: TOmapBinderState = OmapBinderState.NOT_BOUND;
     private _lastAdInfo: Partial<{
         sequence: number,
         numOfAds: number,
@@ -385,7 +385,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
         // dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED = 'playbackTimeUpdated'
         this.dashjs.off('playbackTimeUpdated', this.onTimeUpdate);
 
-        this._state = OmapBinderState.NOT_BINDED;
+        this._state = OmapBinderState.NOT_BOUND;
     }
 
     private async _prefetchNextAd(adPod: AdPod, idx: number): Promise<void> {
