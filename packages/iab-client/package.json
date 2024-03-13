@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-iab-client",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Open Media Ad Player IAB Client",
   "main": "./dist/iab-client/src/index.js",
   "types": "./dist/iab-client/src/index.d.ts",
@@ -20,7 +20,7 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.2",
+    "@ygoto3/omap-core": "^0.0.3",
     "@ygoto3/omap-vmap-parser": "^0.0.1",
     "@ygoto3/omap-vast-parser": "^0.0.2"
   },

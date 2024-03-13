@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-dashjs-sd-sustainable-binder",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Open Media Ad Player Dash.js Binder which manipulate the manifest to insert ads",
   "main": "./dist/dashjs-sd-sustainable-binder/src/index.js",
   "types": "./dist/dashjs-sd-sustainable-binder/src/index.d.ts",
@@ -20,8 +20,8 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.2",
-    "@ygoto3/omap-dashjs-sd-binder": "^0.0.3"
+    "@ygoto3/omap-core": "^0.0.3",
+    "@ygoto3/omap-dashjs-sd-binder": "^0.0.4"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",
