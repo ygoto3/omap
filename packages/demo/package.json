@@ -15,9 +15,9 @@
     "dashjs": "^4.7.2",
     "@ygoto3/omap-core": "^0.0.3",
     "@ygoto3/omap-iab-client": "^0.0.5",
-    "@ygoto3/omap-dashjs-binder": "^0.0.4",
-    "@ygoto3/omap-dashjs-sd-binder": "^0.0.4",
-    "@ygoto3/omap-dashjs-ui-binder": "^0.0.2"
+    "@ygoto3/omap-dashjs-binder": "^0.0.5",
+    "@ygoto3/omap-dashjs-sd-binder": "^0.0.5",
+    "@ygoto3/omap-dashjs-ui-binder": "^0.0.3"
   },
   "devDependencies": {
     "ts-loader": "^9.2.6",
