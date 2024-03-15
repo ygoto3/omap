@@ -593,6 +593,7 @@ const CAN_ABORT_EVENT = (() => {
         }
     };
     const g = (0, eval)('this');
+    if (typeof g.addEventListener !== 'function' || typeof g.removeEventListener !== 'function') return canAbort;
     g.addEventListener('test', null, testOptions);
     Debug.log(`Is AddEventListenerOption signal available?: ${ canAbort }`);
     g.removeEventListener('test', null, testOptions);
