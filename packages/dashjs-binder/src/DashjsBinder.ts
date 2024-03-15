@@ -85,12 +85,8 @@ export default class OmapDashjsBinder implements IOmapBinder {
 
     destroy(): void {
         Debug.log('destroy');
-
         this._unbind();
-        
-        if (typeof this.adVideoElement !== 'undefined') {
-            this._destroyMediaElement(this.adVideoElement);
-        }
+        this._destroyAdVideoElement();
     }
 
     bind(omapClient: IOmapClient): void {
@@ -498,14 +494,12 @@ export default class OmapDashjsBinder implements IOmapBinder {
         }
         const onEnded = () => {
             this.onAdEnded(ad, adDisplayContainer);
-            adVideoElement?.removeEventListener('playing', onPlaying);
-            adVideoElement?.removeEventListener('timeupdate', onTimeupdate);
-            adVideoElement?.removeEventListener('ended', onEnded);
             this.omapClient?.notifyAdCreativeEnded(adCreative, ad.sequence);
             if (idx + 1 >= adPod.ads.length) {
                 this._endAdPod();
                 this.omapClient?.notifyAdPodEnded();
             } else {
+                this._destroyAdVideoElement();
                 this._playNextAd(adPod, idx + 1);
             }
         }
@@ -528,19 +522,26 @@ export default class OmapDashjsBinder implements IOmapBinder {
             this._endAdPod();
             this.omapClient?.notifyAdPlaybackError(ad);
         }
-        adVideoElement.addEventListener('playing', onPlaying);
-        adVideoElement.addEventListener('timeupdate', onTimeupdate);
-        adVideoElement.addEventListener('ended', onEnded);
-        adVideoElement.addEventListener('error', onError);
+
+        if (CAN_ABORT_EVENT) {
+            this._adVideoEventAbortController = new AbortController();
+        } else {
+            this._adVideoEventArguments.push([ 'playing', onPlaying ]);
+            this._adVideoEventArguments.push([ 'timeupdate', onTimeupdate ]);
+            this._adVideoEventArguments.push([ 'ended', onEnded ]);
+            this._adVideoEventArguments.push([ 'error', onError ]);
+        }
+        const options = CAN_ABORT_EVENT ? { signal: this._adVideoEventAbortController?.signal } : void 0;
+        adVideoElement.addEventListener('playing', onPlaying, options);
+        adVideoElement.addEventListener('timeupdate', onTimeupdate, options);
+        adVideoElement.addEventListener('ended', onEnded, options);
+        adVideoElement.addEventListener('error', onError, options);
 
         return true;
     }
 
     private _endAdPod(): void {
-        const adVideoElement = this.adDisplayContainer.querySelector('#ad-video') as HTMLVideoElement | null;
-        // Destroy the ad video element to release the media buffer.
-        // Otherwise, the player will fail to attach the source where only a single decoder is available.
-        if (adVideoElement !== null) this._destroyMediaElement(adVideoElement);
+        this._destroyAdVideoElement();
         this._state = OmapBinderState.CONTENT_PLAYING;
         if (!this._currentAdPod) return;
         this.onAdPodEnded(this._currentAdPod, this.adDisplayContainer);
@@ -548,15 +549,52 @@ export default class OmapDashjsBinder implements IOmapBinder {
         this.emit(OmapBinderEvent.AD_POD_ENDED);
     }
 
-    private _destroyMediaElement(mediaElement: HTMLMediaElement): void {
+    private _destroyAdVideoElement(): void {
+        if (CAN_ABORT_EVENT && typeof this._adVideoEventAbortController !== 'undefined') {
+            this._adVideoEventAbortController.abort();
+        } else {
+            this._adVideoEventArguments.forEach(([ type, listener ]) => {
+                this.adVideoElement?.removeEventListener(type, listener as EventListener);
+            });
+        }
+        delete this._adVideoEventAbortController;
+        this._adVideoEventArguments.length = 0;
+
+        if (typeof this.adVideoElement === 'undefined') return;
+        // Destroy the ad video element to release the media buffer.
+        // Otherwise, the player will fail to attach the source where only a single decoder is available.
+        this._resetMediaElement(this.adVideoElement);
+        if (!this._keepsAdVideoElement) {
+            this.adVideoElement.remove();
+        }
+    }
+
+    private _resetMediaElement(mediaElement: HTMLMediaElement): void {
         mediaElement.pause();
         mediaElement.removeAttribute('src');
         mediaElement.load();
-        if (!this._keepsAdVideoElement) {
-            mediaElement.remove();
-        }
     }
+
+    private _adVideoEventAbortController?: AbortController;
+    private _adVideoEventArguments: ([
+        string,
+        EventListener | ((e: ErrorEvent) => void),
+    ])[] = [];
 
 }
 
 const AD_BREAKS_TRACK_LABEL = 'omap_ad_breaks';
+const CAN_ABORT_EVENT = (() => {
+    let canAbort = false;
+    const testOptions = {
+        get signal() {
+            canAbort = true;
+            return;
+        }
+    };
+    const g = (0, eval)('this');
+    g.addEventListener('test', null, testOptions);
+    Debug.log(`Is AddEventListenerOption signal available?: ${ canAbort }`);
+    g.removeEventListener('test', null, testOptions);
+    return canAbort;
+})();
