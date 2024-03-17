@@ -71,6 +71,9 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
 
     override destroy(): void {
         this.__unbind();
+        this._resetState();
+        this._restoreManifest();
+        this._clearOriginalPeriods();
         super.destroy();
     }
 
@@ -95,8 +98,9 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     private _seekingPlayheadTimeBeyondAdBreak: number | undefined;
     private _periodManipulationRoom: number;
 
-    private _resetManifest(): Manifest {
-        const manifest = this.dashjs.getDashAdapter().getMpd().manifest as Manifest;
+    private _restoreManifest(): Manifest | undefined {
+        const manifest = this.dashjs.getDashAdapter().getMpd().manifest as Manifest | null;
+        if (manifest === null) return;
         const originalPeriods = deepCopy(this._originalPeriods);
         manifest.Period_asArray.length = 0;
         manifest.Period_asArray.push(...originalPeriods);
@@ -106,14 +110,12 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     private _restart(startTime?: number): void {
         if (!this.dashjs.isReady()) return;
         this.lastPlayheadTime = startTime || this.dashjs.time();
-        const manifest = this._resetManifest();
-        this.dashjs.attachSource(manifest, this.lastPlayheadTime);
+        const manifest = this._restoreManifest();
+        if (typeof manifest !== 'undefined') {
+            this.dashjs.attachSource(manifest, this.lastPlayheadTime);
+        }
         
-        // reset state
-        this._periodSplitInfoList.length = 0;
-        this._currentPeriodSplitIndex = -1;
-        this._currentPointIndex = -1;
-        this._seekingPlayheadTimeBeyondAdBreak = void 0;
+        this._resetState();
     }
 
     private _seek(time: number): void {
@@ -124,9 +126,8 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         const point: MediaSplitPoint | undefined = this._periodSplitInfoList[this._currentPeriodSplitIndex]?.points[this._currentPointIndex];
 
         const offestInSecond = point?.video?.offsetInSecond || point?.audio?.offsetInSecond || Number.MAX_SAFE_INTEGER;
-        if (time < splitPeriodStart + offestInSecond) {
+        if (time < splitPeriodStart + offestInSecond && time <= this.dashjs.duration()) {
             this.dashjs.seek(time);
-            return;
         } else if (this.omapClient?.hasAdPodInsertionAt(time)) {
             this.dashjs.pause();
             this._seekingPlayheadTimeBeyondAdBreak = time;
@@ -142,6 +143,22 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
         }
         // dashjs.MediaPlayer.events.MANIFEST_LOADED === 'manifestLoaded'
         this.dashjs.off('manifestLoaded', this._onManifestLoaded);
+    }
+
+    private _resetState(): void {
+        this._periodSplitInfoList.length = 0;
+        this._currentPeriodSplitIndex = -1;
+        this._currentPointIndex = -1;
+        this._seekingPlayheadTimeBeyondAdBreak = void 0;
+    }
+
+    private _clearOriginalPeriods(): void {
+        this._originalPeriods.length = 0;
+    }
+
+    private _setOriginalPeriods(periods: Period[]) {
+        if (this._originalPeriods.length) return;
+        this._originalPeriods.push(...deepCopy(periods));
     }
 
     private _onAdPodInsertionRequestFailed(): void {
@@ -168,7 +185,7 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
 
         const mpd = e.data as Manifest;
         const Period_asArray = mpd.Period_asArray as Period[];
-        this._originalPeriods = deepCopy(Period_asArray);
+        this._setOriginalPeriods(Period_asArray);
         
         const [psis, periodIndex] = Period_asArray.reduce((acc, period: Period, idx) => {
             const [psis, foundIndex, prevPeriodEndTime, points, startTime, periodManipulationRoom] = acc;
