@@ -521,6 +521,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
             }
             this._endAdPod();
             this.omapClient?.notifyAdPlaybackError(ad);
+            this.omapClient?.notifyAdPodEnded();
         }
 
         if (CAN_ABORT_EVENT) {
