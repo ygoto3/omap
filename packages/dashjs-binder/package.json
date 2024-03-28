@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-dashjs-binder",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Open Media Ad Player Dash.js Binder",
   "main": "./dist/dashjs-binder/src/index.js",
   "types": "./dist/dashjs-binder/src/index.d.ts",
@@ -20,7 +20,7 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.3"
+    "@ygoto3/omap-core": "^0.0.4"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",
