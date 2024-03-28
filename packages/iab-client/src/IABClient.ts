@@ -9,6 +9,7 @@ import {
     type IHttpClient,
     DefaultHttpClient,
     type TOmapClientEvent,
+    Bitrate,
 } from '@ygoto3/omap-core';
 import {
     VMAPParser,
@@ -404,7 +405,20 @@ export default class OmapIABClient implements IOmapClient {
                                         const url = mediaFile.url;
                                         const width = mediaFile.width;
                                         const height = mediaFile.height;
-                                        return new AdMediaFile(url, width, height);
+                                        
+                                        const bitrate = (() => {
+                                            const aveBitrate = mediaFile.bitrate;
+                                            const minBitrate = mediaFile.minBitrate;
+                                            const maxBitrate = mediaFile.maxBitrate;
+                                            if (!aveBitrate && !minBitrate && !maxBitrate) return void 0;
+                                            return new Bitrate(aveBitrate, maxBitrate, minBitrate);
+                                        })();
+                                        return new AdMediaFile(
+                                            url,
+                                            width,
+                                            height,
+                                            bitrate,
+                                        );
                                     });
                                     if (!mediaFiles) return null;
                                     const duration = linear?.duration || 0;

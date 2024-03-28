@@ -11,7 +11,10 @@ import type {
     IOmapBinder,
     TOmapBinderState,
     TOmapBinderEvent,
-    AdBreak
+    AdBreak,
+    AdMediaFile,
+    BinderConfig,
+    Bitrate,
 } from '@ygoto3/omap-core';
 import { Debug } from '../../utils/src';
 import type dashjs from 'dashjs';
@@ -130,6 +133,10 @@ export default class OmapDashjsBinder implements IOmapBinder {
         this.omapClient?.notifyAdPodSkipped();
     }
 
+    updateConfig(config: Partial<BinderConfig>): void {
+        this.config = config;
+    }
+
     on(
         type: typeof OmapBinderEvent.AD_POD_STARTED,
         listener: () => void
@@ -196,6 +203,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
     protected adDisplayContainer: HTMLElement;
     protected adVideoElement?: HTMLVideoElement;
     protected adBreaks: AdBreak[] = [];
+    protected config: Partial<BinderConfig> = {};
 
     protected emit(type: typeof OmapBinderEvent.AD_POD_STARTED): void;
     protected emit(type: typeof OmapBinderEvent.AD_POD_ENDED): void;
@@ -405,11 +413,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
         // Select only the first ad creative.
         const adCreative = ad.adCreatives[0];
 
-        // Select the media file with the height larget than and closest to the content video.
-        let adMediaFile = adCreative.adMediaFiles
-            .filter((adMediaFile) => adMediaFile.height >= height)
-            .sort((a, b) => (a.height - height) - (b.height - height))[0] ||
-            adCreative.adMediaFiles.sort((a, b) => b.height - a.height)[0];
+        const adMediaFile = selectAdMediaFile(adCreative.adMediaFiles, height, this.config);
 
         const url = adMediaFile.uri;
         this._prefetchable.prefetch(url);
@@ -451,11 +455,7 @@ export default class OmapDashjsBinder implements IOmapBinder {
         // Select only the first ad creative.
         const adCreative = ad.adCreatives[0];
 
-        // Select the media file with the height larget than and closest to the content video.
-        let adMediaFile = adCreative.adMediaFiles
-            .filter((adMediaFile) => adMediaFile.height >= height)
-            .sort((a, b) => (a.height - height) - (b.height - height))[0] ||
-            adCreative.adMediaFiles.sort((a, b) => b.height - a.height)[0];
+        const adMediaFile = selectAdMediaFile(adCreative.adMediaFiles, height, this.config);
 
         const url = adMediaFile.uri;
         this._prefetchable.fetch(url)
@@ -600,3 +600,24 @@ const CAN_ABORT_EVENT = (() => {
     g.removeEventListener('test', null, testOptions);
     return canAbort;
 })();
+
+export function selectAdMediaFile(adMediaFiles: AdMediaFile[], targetHeight: number, config: Partial<BinderConfig> = {}): AdMediaFile {
+    function validateBitrate(bitrate?: Bitrate): boolean {
+        if (typeof bitrate === 'undefined' || typeof config.bitrate === 'undefined') return true;
+        let validBitrate = true;
+        if (typeof bitrate.max !== 'undefined' && typeof config.bitrate.max !== 'undefined') {
+            validBitrate &&= config.bitrate.max >= bitrate.max;
+        }
+        if (typeof bitrate.average !== 'undefined' && typeof config.bitrate.average !== 'undefined') {
+            validBitrate &&= config.bitrate.average >= bitrate.average;
+        }
+        return validBitrate;
+    }
+    // NaN means no target.  Select the media file with the largest height.
+    const tHeight = isNaN(targetHeight) ? Number.MAX_SAFE_INTEGER : targetHeight;
+    return adMediaFiles
+        // Select the media file with the height larget than and closest to the content video and with the bitrate following the config.
+        .filter(adMediaFile => validateBitrate(adMediaFile.bitrate))
+        .sort((a, b) => Math.abs(a.height - tHeight) - Math.abs(b.height - tHeight))[0] ||
+        adMediaFiles.sort((a, b) => b.height - a.height)[0];
+}

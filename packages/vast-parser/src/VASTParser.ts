@@ -91,7 +91,23 @@ export default class VASTParser {
                     const type = mediaFile._attributes.type;
                     const width = parseInt(mediaFile._attributes.width);
                     const height = parseInt(mediaFile._attributes.height);
-                    const newMediaFile = new MediaFile(url, delivery, type, width, height);
+                    const codec = mediaFile._attributes.codec;
+                    const id = mediaFile._attributes.id;
+                    const bitrate = mediaFile._attributes.bitrate ? parseInt(mediaFile._attributes.bitrate) : void 0;
+                    const minBitrate = mediaFile._attributes.minBitrate ? parseInt(mediaFile._attributes.minBitrate) : void 0;
+                    const maxBitrate = mediaFile._attributes.maxBitrate ? parseInt(mediaFile._attributes.maxBitrate) : void 0;
+                    const newMediaFile = new MediaFile(
+                        url,
+                        delivery,
+                        type,
+                        width,
+                        height,
+                        codec,
+                        id,
+                        bitrate,
+                        minBitrate,
+                        maxBitrate,
+                    );
                     return newMediaFile;
                 });
                 
