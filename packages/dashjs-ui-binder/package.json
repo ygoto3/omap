@@ -1,6 +1,6 @@
 {
   "name": "@ygoto3/omap-dashjs-ui-binder",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Open Media Ad Player Dash.js Binder UI Overlay",
   "main": "./dist/dashjs-ui-binder/src/index.js",
   "types": "./dist/dashjs-ui-binder/src/index.d.ts",
@@ -19,8 +19,8 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.3",
-    "@ygoto3/omap-dashjs-binder": "^0.0.7"
+    "@ygoto3/omap-core": "^0.0.4",
+    "@ygoto3/omap-dashjs-binder": "^0.0.8"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",
