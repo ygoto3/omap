@@ -6,6 +6,8 @@ import { default as AdInformationBuilder } from "./AdInformationBuilder";
 import { default as AdMediaFile } from "./AdMediaFile";
 import { default as AdPod } from "./AdPod";
 import { default as AdPodInsertionRequest } from "./AdPodInsertionRequest";
+import type { default as BinderConfig } from "./BinderConfig";
+import { default as Bitrate } from "./Bitrate";
 import { default as OmapBinderEvent } from "./BinderEvent";
 import { default as OmapBinderState } from "./BinderState";
 import { default as OmapClientEvent } from "./ClientEvent";
@@ -26,6 +28,8 @@ export {
     AdMediaFile,
     AdPod,
     AdPodInsertionRequest,
+    BinderConfig,
+    Bitrate,
     OmapBinderEvent,
     OmapBinderState,
     OmapClientEvent,

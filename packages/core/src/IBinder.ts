@@ -1,4 +1,5 @@
 import type Ad from "./Ad";
+import type BinderConfig from "./BinderConfig";
 import type BinderEvent from "./BinderEvent";
 import type IClient from "./IClient";
 import type TBinderState from "./TBinderState";
@@ -36,6 +37,11 @@ export default interface IOmapBinder {
      * Will skip the current ad break.
      */
     skip(): void;
+
+    /**
+     * Will update the configuration of the binder.
+     */
+    updateConfig(config: Partial<BinderConfig>): void;
 
     /**
      * Use the on method to listen for the `AD_POD_STARTED` event.

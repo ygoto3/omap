@@ -160,6 +160,8 @@ test('parse normal VAST', () => {
     assert.is(inLine.extensions[0].customXML, '<Root><ID><![CDATA[cdata]]></ID></Root>');
     assert.is(inLine.extensions[1].type, 'type-2', 'AD 1 extension 1 should have type "type-2"');
     assert.is(inLine.extensions[1].customXML, '<Creative><Name>4237</Name><Duration>10</Duration></Creative>', '');
+    assert.is(inLine.creatives[0].linear!.mediaFiles[0].bitrate, 4000);
+    assert.is(inLine.creatives[0].linear!.mediaFiles[5].bitrate, 120);
 
     ad = parsedVAST.ads[2];
     assert.is(ad.sequence, void 0);
