@@ -15,7 +15,7 @@ import {
     shortenPeriodAt,
 } from './manifest-manipulation';
 import type { Manifest, Period } from './dashjs-types';
-import { Debug } from '../../utils/src';
+import { Debug, eraseNaN } from '../../utils/src';
 
 /**
  * Dash.js binder for OMAP clients.
@@ -88,7 +88,9 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
 
     protected override onContentResumeRequested(): void {
         Debug.log("ContentResumeRequested");
-        this._restart(this._seekingPlayheadTimeBeyondAdBreak);
+        // Try to restart the content from the restored playhead time after an ad playback is finished
+        // since the content's playhead time can be changed by the ad playback with the single decoder.
+        this._restart(this._seekingPlayheadTimeBeyondAdBreak || eraseNaN(this.lastPlayheadTime));
     }
 
     private _periodSplitInfoList: PeriodSplitInfo[] = [];
