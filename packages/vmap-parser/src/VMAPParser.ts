@@ -1,4 +1,4 @@
-import converter from 'xml-js';
+import { XMLParser } from 'fast-xml-parser';
 import VMAP from "./VMAP";
 import type { XmlVMAPRoot } from './XmlVMAP';
 import AdTagURI from './AdTagURI';
@@ -21,6 +21,14 @@ export default class VMAPParser {
      */
     constructor(vmap: string) {
         this._originalVMAP = vmap;
+        this._parser = new XMLParser({
+          ignoreAttributes: false,
+          attributeNamePrefix: '',
+          attributesGroupName: '_attributes',
+          cdataPropName: '_cdata',
+          alwaysCreateTextNode: true,
+          textNodeName: '_text',
+        });
     }
 
     /**
@@ -33,14 +41,15 @@ export default class VMAPParser {
     }
 
     private _originalVMAP: string | undefined;
+    private _parser: XMLParser;
 
     private _parseVMAP(vmap: string): VMAP | null {
-        const vmapRoot: XmlVMAPRoot = converter.xml2js(vmap, { compact: true }) as XmlVMAPRoot;
+        const vmapRoot: XmlVMAPRoot = this._parser.parse(vmap) as XmlVMAPRoot;
         const vmapObj = vmapRoot['vmap:VMAP'];
         const adBreaks = mapArrayOrElem(vmapObj['vmap:AdBreak'], adBreak => {
             if (!adBreak) return null;
             const adSources = mapArrayOrElem(adBreak['vmap:AdSource'], adSource => {
-                const cdata = adSource['vmap:AdTagURI']?._cdata;
+                const cdata = adSource['vmap:AdTagURI']?._cdata._text;
                 const templateType = adSource['vmap:AdTagURI']?._attributes.templateType;
                 if (cdata && templateType) {
                     console.log(cdata);
@@ -50,7 +59,7 @@ export default class VMAPParser {
                 }
                 return null;
             });
-            
+
             const newAdBreak = new AdBreak(
                 adBreak._attributes.timeOffset,
                 adBreak._attributes.breakType,

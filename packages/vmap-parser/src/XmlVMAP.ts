@@ -2,6 +2,10 @@ export interface XmlVMAPRoot {
     ['vmap:VMAP']: XmlVMAP;
 }
 
+interface XmlTextNode {
+  _text: string;
+}
+
 interface XmlVMAP {
     _attributes: XmlVMAPAttributes;
     ['vmap:AdBreak']?: XmlVMAPAdBreak | XmlVMAPAdBreak[];
@@ -51,7 +55,7 @@ interface XmlVMAPAdData {
 
 interface XmlVMAPAdTagURI {
     _attributes: XmlVMAPAdTagURIAtributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVMAPAdTagURIAtributes {

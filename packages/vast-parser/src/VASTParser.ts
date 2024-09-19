@@ -1,4 +1,4 @@
-import convert from 'xml-js';
+import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { mapArrayOrElem } from '../../utils/src';
 import type { XmlVASTRoot } from "./XmlVAST";
 import Creative from "./Creative";
@@ -27,6 +27,20 @@ export default class VASTParser {
      */
     constructor(vast: string) {
         this._originalVAST = vast;
+        this._parser = new XMLParser({
+          ignoreAttributes: false,
+          attributeNamePrefix: '',
+          attributesGroupName: '_attributes',
+          cdataPropName: '_cdata',
+          alwaysCreateTextNode: true,
+          textNodeName: '_text',
+        });
+        this._builder = new XMLBuilder({
+          attributeNamePrefix: '',
+          attributesGroupName: '_attributes',
+          cdataPropName: '_cdata',
+          textNodeName: '_text',
+        });
     }
 
     /**
@@ -38,21 +52,23 @@ export default class VASTParser {
     }
 
     private _originalVAST: string;
+    private _parser: XMLParser;
+    private _builder: XMLBuilder;
 
     private _parseVAST(vast: string): VAST | null {
-        const vastRoot: XmlVASTRoot = convert.xml2js(vast, { compact: true }) as XmlVASTRoot;
+        const vastRoot: XmlVASTRoot = this._parser.parse(vast) as XmlVASTRoot;
         const vastObj = vastRoot.VAST;
         const ads = mapArrayOrElem(vastObj.Ad, ad => {
             if (!ad) return null;
             const inLineNode = ad.InLine;
             if (!inLineNode) return null;
-            
+
             const errorNode = inLineNode.Error;
             let errors: string[] = [];
             if (errorNode) {
                 errors = mapArrayOrElem(errorNode, error => {
-                    if (!error._cdata) return null;
-                    return error._cdata;
+                    if (!error._cdata || !error._cdata._text) return null;
+                    return error._cdata._text;
                 });
             }
 
@@ -60,11 +76,11 @@ export default class VASTParser {
             let extensions: Extension[] = [];
             if (extensionsNode && extensionsNode.Extension) {
                 extensions = mapArrayOrElem(extensionsNode.Extension, extension => {
-                    const customXML = convert.js2xml(extension as convert.ElementCompact, { compact: true });
+                    const customXML = this._builder.build(extension);
                     return new Extension(customXML, extension._attributes?.type);
                 });
             }
-            
+
             const creativeNode = inLineNode.Creatives?.Creative;
             if (!creativeNode) return null;
             const creatives = mapArrayOrElem(creativeNode, creative => {
@@ -86,7 +102,7 @@ export default class VASTParser {
                 const mediaFileNode = linearNode?.MediaFiles?.MediaFile;
                 if (!mediaFileNode) return null;
                 const mediaFiles = mapArrayOrElem(mediaFileNode, mediaFile => {
-                    const url = mediaFile._cdata;
+                    const url = mediaFile._cdata._text;
                     const delivery = mediaFile._attributes.delivery;
                     const type = mediaFile._attributes.type;
                     const width = parseInt(mediaFile._attributes.width);
@@ -110,35 +126,35 @@ export default class VASTParser {
                     );
                     return newMediaFile;
                 });
-                
+
                 const trackingNode = linearNode?.TrackingEvents?.Tracking;
                 if (trackingNode) {
                     trackingEvents = mapArrayOrElem(trackingNode, tracking => {
                         const event = tracking._attributes.event;
-                        const url = tracking._cdata;
+                        const url = tracking._cdata._text;
                         return new Tracking(url, event);
                     });
                 }
 
-                const adParameters = linearNode?.AdParameters?._cdata;
+                const adParameters = linearNode?.AdParameters?._cdata._text;
 
                 const creativeExtensionsNode = creative.CreativeExtensions;
                 let creativeExtensions: CreativeExtension[] = [];
                 if (creativeExtensionsNode) {
                     creativeExtensions = mapArrayOrElem(creativeExtensionsNode.CreativeExtension, creativeExtension => {
-                        const customXML = convert.js2xml(creativeExtension, { compact: true });
+                        const customXML = this._builder.build(creativeExtension);
                         return new CreativeExtension(customXML, creativeExtension._attributes?.type);
                     });
                 }
 
                 const linear = new Linear(duration, mediaFiles, trackingEvents, adParameters, skipoffset);
-                
+
                 return new Creative(creative._attributes.id, parseInt(creative._attributes.sequence), linear);
             });
 
             const impressions = mapArrayOrElem(inLineNode.Impression, impression => {
                 if (!impression._cdata) return null;
-                return new Impression(impression._cdata);
+                return new Impression(impression._cdata._text);
             });
             const inLine = new InLine('', '', impressions, creatives, void 0, void 0, void 0, void 0, void 0, errors, extensions);
             const newAd = new Ad(ad._attributes?.id, ad._attributes?.sequence ? parseInt(ad._attributes.sequence) : void 0, inLine);

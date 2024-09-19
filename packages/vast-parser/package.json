@@ -20,7 +20,7 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "xml-js": "^1.6.11"
+    "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
     "buffer": "^6.0.3",

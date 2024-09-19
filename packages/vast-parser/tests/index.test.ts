@@ -150,7 +150,7 @@ test('parse normal VAST', () => {
 
     ad = parsedVAST.ads[0];
     assert.is(ad.sequence, 1);
-    
+
     inLine = ad.inLine!;
     assert.is(inLine.errors.length, 2, 'Ad 1 should have 2 errors');
     assert.is(inLine.errors[0], 'https://example.com/vast/preroll-ad-1/ad/1/error/1');
@@ -160,6 +160,7 @@ test('parse normal VAST', () => {
     assert.is(inLine.extensions[0].customXML, '<Root><ID><![CDATA[cdata]]></ID></Root>');
     assert.is(inLine.extensions[1].type, 'type-2', 'AD 1 extension 1 should have type "type-2"');
     assert.is(inLine.extensions[1].customXML, '<Creative><Name>4237</Name><Duration>10</Duration></Creative>', '');
+    assert.is(inLine.creatives[0].linear!.duration, 10);
     assert.is(inLine.creatives[0].linear!.mediaFiles[0].bitrate, 4000);
     assert.is(inLine.creatives[0].linear!.mediaFiles[5].bitrate, 120);
 

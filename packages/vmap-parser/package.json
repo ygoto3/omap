@@ -20,13 +20,13 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "xml-js": "^1.6.11"
+    "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
     "stream": "^0.0.2",
-    "ts-node": "^10.9.2",
     "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "uvu": "^0.5.6",
     "webpack": "^5.89.0",

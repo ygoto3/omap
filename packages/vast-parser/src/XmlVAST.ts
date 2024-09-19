@@ -1,7 +1,9 @@
-import type convert from "xml-js";
-
-export interface XmlVASTRoot extends convert.ElementCompact {
+export interface XmlVASTRoot {
     VAST: XmlVAST;
+}
+
+interface XmlTextNode {
+    _text: string;
 }
 
 // 3.2 VAST
@@ -17,7 +19,7 @@ interface XmlVASTAttributes {
 
 // 3.2.1 Error (VAST)
 interface XmlVASTError {
-    _cdata: string;
+  _cdata: XmlTextNode;
 }
 
 // 3.3 Ad
@@ -67,7 +69,7 @@ interface XmlVASTAdServingId {
 
 // 3.4.4 Impression
 interface XmlVASTImpression {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.4.5 Category
@@ -82,7 +84,7 @@ interface XmlVASTCategoryAttributes {
 
 // 3.4.6 Description
 interface XmlVASTDescription {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.4.7 Advertiser
@@ -123,7 +125,7 @@ interface XmlVASTExpires {
 
 // 3.4.11 Error
 interface XmlVASTError {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.5 ViewableImpression
@@ -140,17 +142,17 @@ interface XmlVASTViewableImpressionAttributes {
 
 // 3.5.1 Viewable
 interface XmlVASTViewable {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.5.2 NotViewable
 interface XmlVASTNotViewable {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.5.3 ViewUndetermined
 interface XmlVASTViewUndetermined {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.6 Creatives
@@ -200,10 +202,10 @@ interface XmlVASTCreativeExtensions {
 // 3.7.3 CreativeExtension
 interface XmlVASTCreativeExtension {
     _attributes: XmlVASTCreativeExtensionAttributes;
-    [key: string]: convert.ElementCompact | undefined;
+    [key: string]: unknown | undefined;
 }
 
-interface XmlVASTCreativeExtensionAttributes extends convert.Attributes {
+interface XmlVASTCreativeExtensionAttributes {
     type: string;
 }
 
@@ -233,7 +235,7 @@ interface XmlVASTDuration {
 // 3.8.2 AdParameters
 interface XmlVASTAdParameters {
     _attributes: XmlVASTAdParametersAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTAdParametersAttributes {
@@ -251,7 +253,7 @@ interface XmlVASTMediaFiles {
 // 3.9.1 MediaFile
 interface XmlVASTMediaFile {
     _attributes: XmlVASTMediaFileAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTMediaFileAttributes {
@@ -274,7 +276,7 @@ interface XmlVASTMediaFileAttributes {
 // 3.9.2 Mezzanine
 interface XmlVASTMezzanine {
     _attributes: XmlVASTMezzanineAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTMezzanineAttributes {
@@ -291,7 +293,7 @@ interface XmlVASTMezzanineAttributes {
 // 3.9.3 InteractiveCreativeFile
 interface XmlVASTInteractiveCreativeFile {
     _attributes: XmlVASTInteractiveCreativeFileAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTInteractiveCreativeFileAttributes {
@@ -308,7 +310,7 @@ interface XmlVASTClosedCaptionFiles {
 // 3.9.5 ClosedCaptionFile
 interface XmlVASTClosedCaptionFile {
     _attributes?: XmlVASTClosedCaptionFileAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTClosedCaptionFileAttributes {
@@ -326,7 +328,7 @@ interface XmlVASTVideoClicks {
 // 3.10.1 ClickThrough
 interface XmlVASTClickThrough {
     _attributes?: XmlVASTClickThroughAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTClickThroughAttributes {
@@ -336,7 +338,7 @@ interface XmlVASTClickThroughAttributes {
 // 3.10.2 ClickTracking
 interface XmlVASTClickTracking {
     _attributes?: XmlVASTClickTrackingAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTClickTrackingAttributes {
@@ -346,7 +348,7 @@ interface XmlVASTClickTrackingAttributes {
 // 3.10.3 CustomClick
 interface XmlVASTCustomClick {
     _attributes?: XmlVASTCustomClickAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTCustomClickAttributes {
@@ -381,7 +383,7 @@ interface XmlVASTIconAttributes {
 
 // 3.11.2 IconViewTracking
 interface XmlVASTIconViewTracking {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.11.3 IconClicks
@@ -393,13 +395,13 @@ interface XmlVASTIconClicks {
 
 // 3.11.4 IconClickThrough
 interface XmlVASTIconClickThrough {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.11.5 IconClickTracking
 interface XmlVASTIconClickTracking {
     _attributes?: XmlVASTIconClickTrackingAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTIconClickTrackingAttributes {
@@ -414,7 +416,7 @@ interface XmlVASTIconClickFallbackImages {
 // 3.11.6.1 IconClickFallbackImage
 interface XmlVASTIconClickFallbackImage {
     _attributes: XmlVASTIconClickFallbackImageAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTIconClickFallbackImageAttributes {
@@ -460,13 +462,13 @@ interface XmlVASTNonLinearInInLine extends XmlVASTNonLinear {
 
 // 3.12.2 NonLinearClickThrough
 interface XmlVASTNonLinearClickThrough {
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 // 3.12.3 NonLinearClickTracking
 interface XmlVASTNonLinearClickTracking {
     _attributes?: XmlVASTNonLinearClickTrackingAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTNonLinearClickTrackingAttributes {
@@ -485,7 +487,7 @@ interface XmlVASTWrapper {
 
 interface XmlVASTTracking {
     _attributes: XmlVASTTrackingAttributes;
-    _cdata: string;
+    _cdata: XmlTextNode;
 }
 
 interface XmlVASTTrackingAttributes {
@@ -500,7 +502,7 @@ interface XmlVASTExtensions {
 
 interface XmlVASTExtension {
     _attributes?: XmlVASTExtensionAttributes;
-    [key: string]: convert.ElementCompact | undefined;
+    [key: string]: unknown | undefined;
 }
 
 interface XmlVASTExtensionAttributes {
