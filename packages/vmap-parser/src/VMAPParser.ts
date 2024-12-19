@@ -1,10 +1,11 @@
-import converter from 'xml-js';
 import VMAP from "./VMAP";
-import type { XmlVMAPRoot } from './XmlVMAP';
+import type { XmlParserError, XmlVMAP } from './XmlVMAP';
 import AdTagURI from './AdTagURI';
 import AdSource from './AdSource';
 import AdBreak from './AdBreak';
 import { mapArrayOrElem } from '../../utils/src';
+
+const NAMESPACE = 'http://www.iab.net/videosuite/vmap';
 
 /**
  * Use this class to parse VMAP.
@@ -21,6 +22,7 @@ export default class VMAPParser {
      */
     constructor(vmap: string) {
         this._originalVMAP = vmap;
+        this._parser = new DOMParser();
     }
 
     /**
@@ -33,15 +35,19 @@ export default class VMAPParser {
     }
 
     private _originalVMAP: string | undefined;
+    private _parser: DOMParser;
 
     private _parseVMAP(vmap: string): VMAP | null {
-        const vmapRoot: XmlVMAPRoot = converter.xml2js(vmap, { compact: true }) as XmlVMAPRoot;
-        const vmapObj = vmapRoot['vmap:VMAP'];
-        const adBreaks = mapArrayOrElem(vmapObj['vmap:AdBreak'], adBreak => {
+        const vmapRoot = this._parser.parseFromString(vmap.trim(), 'text/xml').documentElement as XmlVMAP | XmlParserError;
+        if (vmapRoot.tagName === 'parsererror') return null;
+        const adBreakNodes = Array.from(vmapRoot.getElementsByTagNameNS(NAMESPACE, 'AdBreak'));
+        const adBreaks = mapArrayOrElem(adBreakNodes, adBreak => {
             if (!adBreak) return null;
-            const adSources = mapArrayOrElem(adBreak['vmap:AdSource'], adSource => {
-                const cdata = adSource['vmap:AdTagURI']?._cdata;
-                const templateType = adSource['vmap:AdTagURI']?._attributes.templateType;
+            const adSourceNodes = Array.from(adBreak.getElementsByTagNameNS(NAMESPACE, 'AdSource'));
+            const adSources = mapArrayOrElem(adSourceNodes, adSource => {
+                const adTagURI = adSource.getElementsByTagNameNS(NAMESPACE, 'AdTagURI').item(0);
+                const cdata = adTagURI?.textContent;
+                const templateType = adTagURI?.getAttribute('templateType');
                 if (cdata && templateType) {
                     console.log(cdata);
                     const adTagUri = new AdTagURI(cdata, templateType);
@@ -50,17 +56,24 @@ export default class VMAPParser {
                 }
                 return null;
             });
-            
+            const timeOffset = adBreak.getAttribute('timeOffset');
+            const breakType = adBreak.getAttribute('breakType');
+            const breakId = adBreak.getAttribute('breakId');
+            const repeatAfter = adBreak.getAttribute('repeatAfter') || '';
+
+            if (timeOffset == null || timeOffset.length === 0) return null;
+            if (breakType == null || breakType.length === 0) return null;
+
             const newAdBreak = new AdBreak(
-                adBreak._attributes.timeOffset,
-                adBreak._attributes.breakType,
+                timeOffset,
+                breakType,
                 adSources,
-                adBreak._attributes.breakId,
-                adBreak._attributes.repeatAfter,
+                breakId || undefined,
+                repeatAfter,
             );
             return newAdBreak;
         });
-        const newVMAP = new VMAP(adBreaks, +vmapObj._attributes.version);
+        const newVMAP = new VMAP(adBreaks, Number(vmapRoot.getAttribute('version')));
         return newVMAP;
     }
 

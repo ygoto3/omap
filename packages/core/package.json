@@ -19,7 +19,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ygoto3/omap-vmap-parser": "^0.0.1"
+    "@ygoto3/omap-vmap-parser": "file:../vmap-parser"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

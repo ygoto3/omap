@@ -19,8 +19,8 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.4",
-    "@ygoto3/omap-dashjs-binder": "^0.0.8"
+    "@ygoto3/omap-core": "file:../core",
+    "@ygoto3/omap-dashjs-binder": "file:../dashjs-binder"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",

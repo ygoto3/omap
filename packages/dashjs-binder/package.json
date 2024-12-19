@@ -20,7 +20,7 @@
     "test": "uvu -r ts-node/register tests"
   },
   "dependencies": {
-    "@ygoto3/omap-core": "^0.0.4"
+    "@ygoto3/omap-core": "file:../core"
   },
   "devDependencies": {
     "dashjs": "^4.7.2",

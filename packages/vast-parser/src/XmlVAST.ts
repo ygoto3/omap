@@ -1,508 +1,311 @@
-import type convert from "xml-js";
-
-export interface XmlVASTRoot extends convert.ElementCompact {
-    VAST: XmlVAST;
-}
-
 // 3.2 VAST
-interface XmlVAST {
-    _attributes: XmlVASTAttributes;
-    Ad?: XmlVASTAd | XmlVASTAd[];
-    Error?: XmlVASTError;
+export interface XmlVAST extends Element {
+    tagName: 'VAST';
+    childNodes: NodeListOf<XmlVASTAd | XmlVASTError>;
 }
 
-interface XmlVASTAttributes {
-    version: string;
+export interface XmlParserError extends Element {
+    tagName: 'parsererror';
 }
 
 // 3.2.1 Error (VAST)
-interface XmlVASTError {
-    _cdata: string;
+interface XmlVASTError extends Element {
+    tagName: 'Error';
 }
 
 // 3.3 Ad
-interface XmlVASTAd {
-    _attributes?: XmlVASTAdAttributes;
-    InLine?: XmlVASTInLine;
-    Wrapper?: XmlVASTWrapper;
-}
-
-interface XmlVASTAdAttributes {
-    id?: string;
-    sequence?: string;
+interface XmlVASTAd extends Element {
+    tagName: 'Ad';
+    childNodes: NodeListOf<XmlVASTInLine | XmlVASTWrapper>;
 }
 
 // 3.4 InLine
-interface XmlVASTInLine {
-    AdSystem: XmlVASTAdSystem;
-    AdTitle: XmlVASTAdTitle;
-    AdServingId: XmlVASTAdServingId;
-    Impression: XmlVASTImpression | XmlVASTImpression[];
-    Category?: XmlVASTCategory | XmlVASTCategory[];
-    Description?: XmlVASTDescription;
-    Advertiser?: XmlVASTAdvertiser;
-    Pricing?: XmlVASTPricing;
-    Survey?: XmlVASTSurvey | XmlVASTSurvey[];
-    Expires?: XmlVASTExpires;
-    Error?: XmlVASTError | XmlVASTError[];
-    ViewableImpression?: XmlVASTViewableImpression;
-    Creatives: XmlVASTCreativesInInLine;
-    Extensions: XmlVASTExtensions;
+interface XmlVASTInLine extends Element {
+    tagName: 'InLine';
+    childNodes: NodeListOf<XmlVASTAdSystem | XmlVASTAdTitle | XmlVASTAdServingId | XmlVASTImpression | XmlVASTCategory | XmlVASTDescription | XmlVASTAdvertiser | XmlVASTPricing | XmlVASTSurvey | XmlVASTExpires | XmlVASTError | XmlVASTViewableImpression | XmlVASTCreativesInInLine | XmlVASTExtensions>;
 }
 
 // 3.4.1 AdSystem
-interface XmlVASTAdSystem {
-    _text: string;
+interface XmlVASTAdSystem extends Element {
+    tagName: 'AdSystem';
 }
 
 // 3.4.2 AdTitle
-interface XmlVASTAdTitle {
-    _text: string;
+interface XmlVASTAdTitle extends Element {
+    tagName: 'AdTitle';
 }
 
 // 3.4.3 AdServingId
-interface XmlVASTAdServingId {
-    _text: string;
+interface XmlVASTAdServingId extends Element {
+    tagName: 'AdServingId';
 }
 
 // 3.4.4 Impression
-interface XmlVASTImpression {
-    _cdata: string;
+interface XmlVASTImpression extends Element {
+    tagName: 'Impression';
 }
 
 // 3.4.5 Category
-interface XmlVASTCategory {
-    _attributes: XmlVASTCategoryAttributes;
-    _text: string;
-}
-
-interface XmlVASTCategoryAttributes {
-    authority: string;
+interface XmlVASTCategory extends Element {
+    tagName: 'Category';
 }
 
 // 3.4.6 Description
-interface XmlVASTDescription {
-    _cdata: string;
+interface XmlVASTDescription extends Element {
+    tagName: 'Description';
 }
 
 // 3.4.7 Advertiser
-interface XmlVASTAdvertiser {
-    _attributes: XmlVASTAdvertiserAttributes;
-    _text: string;
-}
-
-interface XmlVASTAdvertiserAttributes {
-    _text: string;
+interface XmlVASTAdvertiser extends Element {
+    tagName: 'Advertiser';
 }
 
 // 3.4.8 Pricing
-interface XmlVASTPricing {
-    _attributes: XmlVASTPricingAttributes;
-    _text: string;
-}
-
-interface XmlVASTPricingAttributes {
-    model: 'CPM' | 'CPC' | 'CPE' | 'CPV';
-    currency: string;
+interface XmlVASTPricing extends Element {
+    tagName: 'Pricing';
 }
 
 // 3.4.9 Survey
-interface XmlVASTSurvey {
-    _attributes: XmlVASTSurveyAttributes;
-    _text: string;
-}
-
-interface XmlVASTSurveyAttributes {
-    type: string;
+interface XmlVASTSurvey extends Element {
+    tagName: 'Survey';
 }
 
 // 3.4.10 Expires
-interface XmlVASTExpires {
-    _text: string;
+interface XmlVASTExpires extends Element {
+    tagName: 'Expires';
 }
 
 // 3.4.11 Error
-interface XmlVASTError {
-    _cdata: string;
+interface XmlVASTError extends Element {
+    tagName: 'Error';
 }
 
 // 3.5 ViewableImpression
-interface XmlVASTViewableImpression {
-    _attributes: XmlVASTViewableImpressionAttributes;
-    Viewable?: XmlVASTViewable | XmlVASTViewable[];
-    NotViewable?: XmlVASTNotViewable | XmlVASTNotViewable[];
-    ViewUndetermined?: XmlVASTViewUndetermined | XmlVASTViewUndetermined[];
-}
-
-interface XmlVASTViewableImpressionAttributes {
-    id: string;
+interface XmlVASTViewableImpression extends Element {
+    tagName: 'ViewableImpression';
+    childNodes: NodeListOf<XmlVASTViewable | XmlVASTNotViewable | XmlVASTViewUndetermined>;
 }
 
 // 3.5.1 Viewable
-interface XmlVASTViewable {
-    _cdata: string;
+interface XmlVASTViewable extends Element {
+    tagName: 'Viewable';
 }
 
 // 3.5.2 NotViewable
-interface XmlVASTNotViewable {
-    _cdata: string;
+interface XmlVASTNotViewable extends Element {
+    tagName: 'NotViewable';
 }
 
 // 3.5.3 ViewUndetermined
-interface XmlVASTViewUndetermined {
-    _cdata: string;
+interface XmlVASTViewUndetermined extends Element {
+    tagName: 'ViewUndetermined';
 }
 
 // 3.6 Creatives
-interface XmlVASTCreatives {
-    Creative: XmlVASTCreative | XmlVASTCreative[];
+interface XmlVASTCreatives extends Element {
+    tagName: 'Creatives';
+    childNodes: NodeListOf<XmlVASTCreative>;
 }
 
-interface XmlVASTCreativesInInLine extends XmlVASTCreatives {
-    Creative: XmlVASTCreativeInInLine | XmlVASTCreativeInInLine[];
+interface XmlVASTCreativesInInLine extends Element {
+    tagName: 'Creatives';
+    childNodes: NodeListOf<XmlVASTCreativeInInLine>;
 }
 
 // 3.7 Creative
-interface XmlVASTCreative {
-    _attributes: XmlVASTCreativeAttributes;
-    Linear?: XmlVASTLinear;
-    NonLinearAds?: XmlVASTNonLinearAds;
+interface XmlVASTCreative extends Element {
+    tagName: 'Creative';
+    childNodes: NodeListOf<XmlVASTLinear | XmlVASTNonLinearAds>;
 }
 
-interface XmlVASTCreativeAttributes {
-    id: string;
-    adId: string;
-    sequence: string;
-    apiFramework: string;
-}
-
-interface XmlVASTCreativeInInLine extends XmlVASTCreative {
-    UniversalAdId: XmlVASTUniversalAdId | XmlVASTUniversalAdId[];
-    CreativeExtensions?: XmlVASTCreativeExtensions;
-    Linear?: XmlVASTLinearInInLine;
+interface XmlVASTCreativeInInLine extends Element {
+    tagName: 'Creative';
+    childNodes: NodeListOf<XmlVASTUniversalAdId | XmlVASTCreativeExtensions | XmlVASTLinearInInLine>;
 }
 
 // 3.7.1 UniversalAdId
-interface XmlVASTUniversalAdId {
-    _attributes: XmlVASTUniversalAdIdAttributes;
-    _text: string;
-}
-
-interface XmlVASTUniversalAdIdAttributes {
-    idRegistry: string;
+interface XmlVASTUniversalAdId extends Element {
+tagName: 'UniversalAdId';
 }
 
 // 3.7.2 CreativeExtensions
-interface XmlVASTCreativeExtensions {
-    CreativeExtension: XmlVASTCreativeExtension | XmlVASTCreativeExtension[];
+interface XmlVASTCreativeExtensions extends Element {
+    tagName: 'CreativeExtensions';
+    childNodes: NodeListOf<XmlVASTCreativeExtension>;
 }
 
 // 3.7.3 CreativeExtension
-interface XmlVASTCreativeExtension {
-    _attributes: XmlVASTCreativeExtensionAttributes;
-    [key: string]: convert.ElementCompact | undefined;
-}
-
-interface XmlVASTCreativeExtensionAttributes extends convert.Attributes {
-    type: string;
+interface XmlVASTCreativeExtension extends Element {
+    tagName: 'CreativeExtension';
 }
 
 // 3.8 Linear
-interface XmlVASTLinear {
-    _attributes?: XmlVASTLinearAttributes;
-    TrackingEvents: XmlVASTTrackingEvents;
-    VideoClicks?: XmlVASTVideoClicks;
-    Icons?: XmlVASTIcons;
+interface XmlVASTLinear extends Element {
+    tagName: 'Linear';
+    childNodes: NodeListOf<XmlVASTTrackingEvents | XmlVASTVideoClicks | XmlVASTIcons>;
 }
 
-interface XmlVASTLinearAttributes {
-    skipoffset: string;
-}
-
-interface XmlVASTLinearInInLine extends XmlVASTLinear {
-    Duration: XmlVASTDuration;
-    AdParameters?: XmlVASTAdParameters;
-    MediaFiles: XmlVASTMediaFiles;
+interface XmlVASTLinearInInLine extends Element {
+    tagName: 'Linear';
+    childNodes: NodeListOf<XmlVASTDuration | XmlVASTAdParameters | XmlVASTMediaFiles>;
 }
 
 // 3.8.1 Duration
-interface XmlVASTDuration {
-    _text: string;
+interface XmlVASTDuration extends Element {
+    tagName: 'Duration';
 }
 
 // 3.8.2 AdParameters
-interface XmlVASTAdParameters {
-    _attributes: XmlVASTAdParametersAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTAdParametersAttributes {
-    xmlEncoded: string;
+interface XmlVASTAdParameters extends Element {
+    tagName: 'AdParameters';
 }
 
 // 3.9 MediaFiles
-interface XmlVASTMediaFiles {
-    MediaFile: XmlVASTMediaFile | XmlVASTMediaFile[];
-    Mezzanine?: XmlVASTMezzanine | XmlVASTMezzanine[];
-    InteractiveCreativeFile?: XmlVASTInteractiveCreativeFile | XmlVASTInteractiveCreativeFile[];
-    ClosedCaptionFiles: XmlVASTClosedCaptionFiles;
+interface XmlVASTMediaFiles extends Element {
+    tagName: 'MediaFiles';
+    childNodes: NodeListOf<XmlVASTMediaFile | XmlVASTMezzanine | XmlVASTInteractiveCreativeFile | XmlVASTClosedCaptionFiles>;
 }
 
 // 3.9.1 MediaFile
-interface XmlVASTMediaFile {
-    _attributes: XmlVASTMediaFileAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTMediaFileAttributes {
-    delivery: string;
-    type: string;
-    width: string;
-    height: string;
-    codec?: string;
-    id?: string;
-    bitrate?: string;
-    minBitrate?: string;
-    maxBitrate?: string;
-    scalable?: string;
-    maintainAspectRatio?: string;
-    apiFramework?: string; // Deprecated in 4.1 in preparation for VPAID being phased out
-    fileSize?: string;
-    mediaType?: string;
+interface XmlVASTMediaFile extends Element {
+    tagName: 'MediaFile';
 }
 
 // 3.9.2 Mezzanine
-interface XmlVASTMezzanine {
-    _attributes: XmlVASTMezzanineAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTMezzanineAttributes {
-    delivery: string;
-    type: string;
-    width: string;
-    height: string;
-    codec?: string;
-    id?: string;
-    fileSize?: string;
-    mediaType?: string;
+interface XmlVASTMezzanine extends Element {
+    tagName: 'Mezzanine';
 }
 
 // 3.9.3 InteractiveCreativeFile
-interface XmlVASTInteractiveCreativeFile {
-    _attributes: XmlVASTInteractiveCreativeFileAttributes;
-    _cdata: string;
+interface XmlVASTInteractiveCreativeFile extends Element {
+    tagName: 'InteractiveCreativeFile';
 }
 
-interface XmlVASTInteractiveCreativeFileAttributes {
-    type?: string;
-    apiFramework?: string;
-    variableDuration?: string;
-}
+
 
 // 3.9.4 ClosedCaptionFiles
-interface XmlVASTClosedCaptionFiles {
-    ClosedCaptionFile?: XmlVASTClosedCaptionFile | XmlVASTClosedCaptionFile[];
+interface XmlVASTClosedCaptionFiles extends Element {
+    tagName: 'ClosedCaptionFiles';
+    childNodes: NodeListOf<XmlVASTClosedCaptionFile>;
 }
 
 // 3.9.5 ClosedCaptionFile
-interface XmlVASTClosedCaptionFile {
-    _attributes?: XmlVASTClosedCaptionFileAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTClosedCaptionFileAttributes {
-    type?: string;
-    language?: string;
+interface XmlVASTClosedCaptionFile extends Element {
+    tagName: 'ClosedCaptionFile';
 }
 
 // 3.10 VideoClicks
-interface XmlVASTVideoClicks {
-    ClickThrough?: XmlVASTClickThrough;
-    ClickTracking?: XmlVASTClickTracking | XmlVASTClickTracking[];
-    CustomClick?: XmlVASTCustomClick | XmlVASTCustomClick[];
+interface XmlVASTVideoClicks extends Element {
+    tagName: 'VideoClicks';
+    childNodes: NodeListOf<XmlVASTClickThrough | XmlVASTClickTracking | XmlVASTCustomClick>;
 }
 
 // 3.10.1 ClickThrough
-interface XmlVASTClickThrough {
-    _attributes?: XmlVASTClickThroughAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTClickThroughAttributes {
-    id: string;
+interface XmlVASTClickThrough  extends Element {
+    tagName: 'ClickThrough';
 }
 
 // 3.10.2 ClickTracking
-interface XmlVASTClickTracking {
-    _attributes?: XmlVASTClickTrackingAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTClickTrackingAttributes {
-    id: string;
+interface XmlVASTClickTracking extends Element {
+    tagName: 'ClickTracking';
 }
 
 // 3.10.3 CustomClick
-interface XmlVASTCustomClick {
-    _attributes?: XmlVASTCustomClickAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTCustomClickAttributes {
-    id: string;
+interface XmlVASTCustomClick extends Element {
+    tagName: 'CustomClick';
 }
 
 // 3.11 Icons
-interface XmlVASTIcons {
-    Icon: XmlVASTIcon | XmlVASTIcon[];
+interface XmlVASTIcons extends Element {
+    tagName: 'Icons';
+    childNodes: NodeListOf<XmlVASTIcon>;
 }
 
 // 3.11.1 Icon
-interface XmlVASTIcon {
-    _attributes?: XmlVASTIconAttributes;
-    IconViewTracking?: XmlVASTIconViewTracking | XmlVASTIconViewTracking[];
-    IconClicks?: XmlVASTIconClicks;
-}
-
-interface XmlVASTIconAttributes {
-    program?: string;
-    width?: string;
-    height?: string;
-    xPosition?: string;
-    yPosition?: string;
-    duration?: string;
-    offset?: string;
-    apiFramework?: string;
-    pxratio?: string;
-    altText?: string;
-    hoverText?: string;
+interface XmlVASTIcon extends Element {
+    tagName: 'Icon';
+    childNodes: NodeListOf<XmlVASTIconViewTracking | XmlVASTIconClicks>;
 }
 
 // 3.11.2 IconViewTracking
-interface XmlVASTIconViewTracking {
-    _cdata: string;
+interface XmlVASTIconViewTracking extends Element {
+    tagName: 'IconViewTracking';
 }
 
 // 3.11.3 IconClicks
-interface XmlVASTIconClicks {
-    IconClickThrough?: XmlVASTIconClickThrough;
-    IconClickTracking?: XmlVASTIconClickTracking | XmlVASTIconClickTracking[];
-    IconClickFallbackImages?: XmlVASTIconClickTracking;
+interface XmlVASTIconClicks extends Element {
+    tagName: 'IconClicks';
+    childNodes: NodeListOf<XmlVASTIconClickThrough | XmlVASTIconClickTracking | XmlVASTIconClickFallbackImages>;
 }
 
 // 3.11.4 IconClickThrough
-interface XmlVASTIconClickThrough {
-    _cdata: string;
+interface XmlVASTIconClickThrough extends Element {
+    tagName: 'IconClickThrough';
 }
 
 // 3.11.5 IconClickTracking
-interface XmlVASTIconClickTracking {
-    _attributes?: XmlVASTIconClickTrackingAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTIconClickTrackingAttributes {
-    id: string;
+interface XmlVASTIconClickTracking extends Element {
+    tagName: 'IconClickTracking';
 }
 
 // 3.11.6 IconClickFallbackImages
-interface XmlVASTIconClickFallbackImages {
-    IconClickFallbackImage: XmlVASTIconClickFallbackImage | XmlVASTIconClickFallbackImage[];
+interface XmlVASTIconClickFallbackImages extends Element {
+    tagName: 'IconClickFallbackImages';
+    childNodes: NodeListOf<XmlVASTIconClickFallbackImage>;
 }
 
 // 3.11.6.1 IconClickFallbackImage
-interface XmlVASTIconClickFallbackImage {
-    _attributes: XmlVASTIconClickFallbackImageAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTIconClickFallbackImageAttributes {
-    width: string;
-    height: string;
+interface XmlVASTIconClickFallbackImage extends Element {
+    tagName: 'IconClickFallbackImage';
 }
 
 // 3.12 NonLinearAds
-interface XmlVASTNonLinearAds {
-    NonLinear: XmlVASTNonLinear | XmlVASTNonLinear[];
-    TrackingEvents: XmlVASTTrackingEvents;
+interface XmlVASTNonLinearAds extends Element {
+    tagName: 'NonLinearAds';
+    childNodes: NodeListOf<XmlVASTNonLinear | XmlVASTTrackingEvents>;
 }
 
-interface XmlVASTTrackingEvents {
-    Tracking: XmlVASTTracking | XmlVASTTracking[];
+interface XmlVASTTrackingEvents extends Element {
+    tagName: 'TrackingEvents';
+    childNodes: NodeListOf<XmlVASTTracking>;
 }
 
 // 3.12.1 NonLinear
-interface XmlVASTNonLinear {
-    _attributes: XmlVASTNonLinearAttributes;
-    NonLinearClickTracking?: XmlVASTNonLinearClickTracking | XmlVASTNonLinearClickTracking[];
+interface XmlVASTNonLinear extends Element {
+    tagName: 'NonLinear';
+    childNodes: NodeListOf<XmlVASTNonLinearClickTracking>;
 }
 
-interface XmlVASTNonLinearAttributes {
-    id?: string;
-    width: string;
-    height: string;
-    expandedWidth?: string;
-    expandedHeight?: string;
-    scalable?: string;
-    maintainAspectRatio?: string;
-    apiFramework?: string;
-    minSuggestedDuration?: string;
-}
-
-interface XmlVASTNonLinearInInLine extends XmlVASTNonLinear {
-    // StaticResource?: XmlVASTStaticResource;
-    // IFrameResource?: XmlVASTIFrameResource;
-    // HTMLResource?: XmlVASTHTMLResource;
-    // AdParameters?: XmlVASTAdParameters;
-    NonLinearClickThrough?: XmlVASTNonLinearClickThrough;
+interface XmlVASTNonLinearInInLine extends Element {
+    tagName: 'NonLinear';
+    childNodes: NodeListOf<XmlVASTNonLinearClickThrough>;
 }
 
 // 3.12.2 NonLinearClickThrough
-interface XmlVASTNonLinearClickThrough {
-    _cdata: string;
+interface XmlVASTNonLinearClickThrough extends Element {
+    tagName: 'NonLinearClickThrough';
 }
 
 // 3.12.3 NonLinearClickTracking
-interface XmlVASTNonLinearClickTracking {
-    _attributes?: XmlVASTNonLinearClickTrackingAttributes;
-    _cdata: string;
-}
-
-interface XmlVASTNonLinearClickTrackingAttributes {
-    id: string;
+interface XmlVASTNonLinearClickTracking extends Element {
+    tagName: 'NonLinearClickTracking';
 }
 
 // 3.19 Wrapper
-interface XmlVASTWrapper {
-    AdSystem: XmlVASTAdSystem;
-    Impression: XmlVASTImpression | XmlVASTImpression[];
-    Pricing?: XmlVASTPricing;
-    Error?: XmlVASTError | XmlVASTError[];
-    ViewableImpression?: XmlVASTViewableImpression;
-    Creatives?: XmlVASTCreatives;
+interface XmlVASTWrapper extends Element {
+    tagName: 'Wrapper';
+    childNodes: NodeListOf<XmlVASTAdSystem | XmlVASTImpression | XmlVASTPricing | XmlVASTError | XmlVASTViewableImpression | XmlVASTCreatives>;
 }
 
-interface XmlVASTTracking {
-    _attributes: XmlVASTTrackingAttributes;
-    _cdata: string;
+interface XmlVASTTracking extends Element {
+    tagName: 'Tracking';
 }
 
-interface XmlVASTTrackingAttributes {
-    event: LinearAdMetric;
+interface XmlVASTExtensions extends Element {
+    tagName: 'Extensions';
+    childNodes: NodeListOf<XmlVASTExtension>;
 }
 
-type LinearAdMetric = 'loaded' | 'start' | 'firstQuartile' | 'midpoint' | 'thirdQuartile' | 'complete' | 'otherAdInteraction' | 'progress' | 'closeLinear';
-
-interface XmlVASTExtensions {
-    Extension: XmlVASTExtension | XmlVASTExtension[];
-}
-
-interface XmlVASTExtension {
-    _attributes?: XmlVASTExtensionAttributes;
-    [key: string]: convert.ElementCompact | undefined;
-}
-
-interface XmlVASTExtensionAttributes {
-    type: string;
+interface XmlVASTExtension extends Element {
+    tagName: 'Extension';
 }

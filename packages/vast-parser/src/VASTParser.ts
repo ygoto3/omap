@@ -1,6 +1,5 @@
-import convert from 'xml-js';
 import { mapArrayOrElem } from '../../utils/src';
-import type { XmlVASTRoot } from "./XmlVAST";
+import type { XmlParserError, XmlVAST } from "./XmlVAST";
 import Creative from "./Creative";
 import Ad from "./Ad";
 import MediaFile from "./MediaFile";
@@ -27,6 +26,8 @@ export default class VASTParser {
      */
     constructor(vast: string) {
         this._originalVAST = vast;
+        this._parser = new DOMParser();
+        this._serializer = new XMLSerializer();
     }
 
     /**
@@ -38,113 +39,126 @@ export default class VASTParser {
     }
 
     private _originalVAST: string;
+    private _parser: DOMParser;
+    private _serializer: XMLSerializer;
 
     private _parseVAST(vast: string): VAST | null {
-        const vastRoot: XmlVASTRoot = convert.xml2js(vast, { compact: true }) as XmlVASTRoot;
-        const vastObj = vastRoot.VAST;
-        const ads = mapArrayOrElem(vastObj.Ad, ad => {
+        const vastRoot = this._parser.parseFromString(vast.trim(), 'text/xml').documentElement as XmlVAST | XmlParserError;
+        if (vastRoot.tagName === 'parsererror') return null;
+        const adNodes = Array.from(vastRoot.getElementsByTagName('Ad'));
+        const ads = mapArrayOrElem(adNodes, ad => {
             if (!ad) return null;
-            const inLineNode = ad.InLine;
+            const inLineNode = ad.getElementsByTagName('InLine').item(0);
             if (!inLineNode) return null;
-            
-            const errorNode = inLineNode.Error;
-            let errors: string[] = [];
-            if (errorNode) {
-                errors = mapArrayOrElem(errorNode, error => {
-                    if (!error._cdata) return null;
-                    return error._cdata;
-                });
-            }
 
-            const extensionsNode = inLineNode.Extensions;
-            let extensions: Extension[] = [];
-            if (extensionsNode && extensionsNode.Extension) {
-                extensions = mapArrayOrElem(extensionsNode.Extension, extension => {
-                    const customXML = convert.js2xml(extension as convert.ElementCompact, { compact: true });
-                    return new Extension(customXML, extension._attributes?.type);
-                });
-            }
-            
-            const creativeNode = inLineNode.Creatives?.Creative;
-            if (!creativeNode) return null;
-            const creatives = mapArrayOrElem(creativeNode, creative => {
-                let duration = 0;
-                let trackingEvents: Tracking[] = [];
+            const errorNodes = Array.from(inLineNode.getElementsByTagName('Error'));
+            const errors = mapArrayOrElem(errorNodes, error => {
+                return error.textContent ? error.textContent : null;
+            });
 
-                const linearNode = creative.Linear;
+            const extensionNodes = Array.from(inLineNode.getElementsByTagName('Extension'));
+            const extensions = mapArrayOrElem(extensionNodes, extension => {
+                if (extension.parentNode?.nodeName.toLowerCase() !== 'extensions') return null;
 
-                const skipoffsetText = linearNode?._attributes?.skipoffset;
+                const customXML = Array.from(extension.childNodes).map(node => {
+                    return this._serializer.serializeToString(node);
+                }).join('');
+                return new Extension(customXML, extension.getAttribute('type') || '');
+            });
+
+            const creativeNodes = Array.from(inLineNode.getElementsByTagName('Creative'));
+            const creatives = mapArrayOrElem(creativeNodes, creative => {
+                if (creative.parentNode?.nodeName.toLowerCase() !== 'creatives') return null;
+
+                const linearNode = creative.getElementsByTagName('Linear').item(0);
+                if (linearNode == null) return null;
+
+                const skipoffsetText = linearNode.getAttribute('skipoffset');
                 const skipoffset = skipoffsetText ? parseInt(skipoffsetText) : undefined;
 
-                const durationText = linearNode?.Duration?._text;
-                if (durationText) {
-                    duration = durationText.split(':')
+                const durationText = linearNode.getElementsByTagName('Duration').item(0)?.textContent;
+                const duration = durationText ?
+                    durationText.split(':')
                         .map((time, idx) => parseInt(time) * Math.pow(60, 2 - idx))
-                        .reduce((prev, cur) => prev + cur, 0);
-                }
+                        .reduce((prev, cur) => prev + cur, 0)
+                    : 0;
 
-                const mediaFileNode = linearNode?.MediaFiles?.MediaFile;
-                if (!mediaFileNode) return null;
-                const mediaFiles = mapArrayOrElem(mediaFileNode, mediaFile => {
-                    const url = mediaFile._cdata;
-                    const delivery = mediaFile._attributes.delivery;
-                    const type = mediaFile._attributes.type;
-                    const width = parseInt(mediaFile._attributes.width);
-                    const height = parseInt(mediaFile._attributes.height);
-                    const codec = mediaFile._attributes.codec;
-                    const id = mediaFile._attributes.id;
-                    const bitrate = mediaFile._attributes.bitrate ? parseInt(mediaFile._attributes.bitrate) : void 0;
-                    const minBitrate = mediaFile._attributes.minBitrate ? parseInt(mediaFile._attributes.minBitrate) : void 0;
-                    const maxBitrate = mediaFile._attributes.maxBitrate ? parseInt(mediaFile._attributes.maxBitrate) : void 0;
+                const mediaFileNodes = Array.from(linearNode.getElementsByTagName('MediaFile'));
+                const mediaFiles = mapArrayOrElem(mediaFileNodes, mediaFile => {
+                    if (mediaFile.parentNode?.nodeName.toLowerCase() !== 'mediafiles') return null;
+
+                    const url = mediaFile.textContent;
+                    const delivery = mediaFile.getAttribute('delivery');
+                    const type = mediaFile.getAttribute('type');
+                    const width = mediaFile.getAttribute('width');
+                    const height = mediaFile.getAttribute('height');
+                    const codec = mediaFile.getAttribute('codec');
+                    const id = mediaFile.getAttribute('id');
+                    const bitrate = mediaFile.getAttribute('bitrate');
+                    const minBitrate = mediaFile.getAttribute('minBitrate');
+                    const maxBitrate = mediaFile.getAttribute('maxBitrate');
+
+                    if (delivery == null || !['progressive', 'streaming'].includes(delivery)) return null;
+                    if (type == null || type.length === 0) return null;
+
                     const newMediaFile = new MediaFile(
-                        url,
+                        url || '',
                         delivery,
                         type,
-                        width,
-                        height,
-                        codec,
-                        id,
-                        bitrate,
-                        minBitrate,
-                        maxBitrate,
+                        width ? parseInt(width) : 0,
+                        height ? parseInt(height) : 0,
+                        codec || undefined,
+                        id || undefined,
+                        bitrate ? parseInt(bitrate) : void 0,
+                        minBitrate ? parseInt(minBitrate) : void 0,
+                        maxBitrate ? parseInt(maxBitrate) : void 0
                     );
                     return newMediaFile;
                 });
-                
-                const trackingNode = linearNode?.TrackingEvents?.Tracking;
-                if (trackingNode) {
-                    trackingEvents = mapArrayOrElem(trackingNode, tracking => {
-                        const event = tracking._attributes.event;
-                        const url = tracking._cdata;
-                        return new Tracking(url, event);
-                    });
-                }
 
-                const adParameters = linearNode?.AdParameters?._cdata;
+                const trackingNodes = Array.from(linearNode.getElementsByTagName('Tracking'));
+                const trackingEvents = mapArrayOrElem(trackingNodes, tracking => {
+                    if (tracking.parentNode?.nodeName.toLowerCase() !== 'trackingevents') return null;
 
-                const creativeExtensionsNode = creative.CreativeExtensions;
-                let creativeExtensions: CreativeExtension[] = [];
-                if (creativeExtensionsNode) {
-                    creativeExtensions = mapArrayOrElem(creativeExtensionsNode.CreativeExtension, creativeExtension => {
-                        const customXML = convert.js2xml(creativeExtension, { compact: true });
-                        return new CreativeExtension(customXML, creativeExtension._attributes?.type);
-                    });
-                }
+                    const event = tracking.getAttribute('event');
+                    const url = tracking.textContent || '';
+                    return new Tracking(url, event || undefined);
+                });
+
+                const adParameters = linearNode.getElementsByTagName('AdParameters').item(0)?.textContent || '';
+
+                const creativeExtensionNodes = Array.from(creative.getElementsByTagName('CreativeExtension'));
+                const creativeExtensions = mapArrayOrElem(creativeExtensionNodes, creativeExtension => {
+                    if (creativeExtension.parentNode?.nodeName.toLowerCase() !== 'creativeextensions') return null;
+                    const customXML = Array.from(creativeExtension.childNodes).map(node => {
+                        return this._serializer.serializeToString(node);
+                    }).join('');
+                    return new CreativeExtension(customXML, creativeExtension.getAttribute('type') || '');
+                });
 
                 const linear = new Linear(duration, mediaFiles, trackingEvents, adParameters, skipoffset);
-                
-                return new Creative(creative._attributes.id, parseInt(creative._attributes.sequence), linear);
+
+                return new Creative(creative.getAttribute('id') || '', parseInt(creative.getAttribute('sequence') || '0'), linear);
             });
 
-            const impressions = mapArrayOrElem(inLineNode.Impression, impression => {
-                if (!impression._cdata) return null;
-                return new Impression(impression._cdata);
+            const impressionNodes = Array.from(inLineNode.getElementsByTagName('Impression'));
+            const impressions = mapArrayOrElem(impressionNodes, impression => {
+                if (!impression.textContent) return null;
+                return new Impression(impression.textContent);
             });
             const inLine = new InLine('', '', impressions, creatives, void 0, void 0, void 0, void 0, void 0, errors, extensions);
-            const newAd = new Ad(ad._attributes?.id, ad._attributes?.sequence ? parseInt(ad._attributes.sequence) : void 0, inLine);
+
+            const adId = ad.getAttribute('id');
+            const adSequenceAttr = ad.getAttribute('sequence');
+            const adSequence = adSequenceAttr ? parseInt(adSequenceAttr) : void 0;
+            const newAd = new Ad(adId || undefined, adSequence, inLine);
             return newAd;
         });
-        const newVast = new VAST(vastObj._attributes.version, ads);
+        const version = vastRoot.getAttribute('version');
+
+        if (version == null || version.length === 0) return null;
+
+        const newVast = new VAST(version, ads);
         return newVast;
     }
 

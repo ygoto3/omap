@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Open Media Ad Player demo",
-  "main": "src/main.ts",  
+  "main": "src/main.ts",
   "repository": "https://github.com/ygoto3/omap",
   "author": "ygoto3<my.important.apes@gmail.com>",
   "license": "MIT",
@@ -13,11 +13,11 @@
   },
   "dependencies": {
     "dashjs": "^4.7.2",
-    "@ygoto3/omap-core": "^0.0.4",
-    "@ygoto3/omap-iab-client": "^0.0.6",
-    "@ygoto3/omap-dashjs-binder": "^0.0.8",
-    "@ygoto3/omap-dashjs-sd-binder": "^0.0.8",
-    "@ygoto3/omap-dashjs-ui-binder": "^0.0.6"
+    "@ygoto3/omap-core": "file:../core",
+    "@ygoto3/omap-iab-client": "file:../iab-client",
+    "@ygoto3/omap-dashjs-binder": "file:../dashjs-binder",
+    "@ygoto3/omap-dashjs-sd-binder": "file:../dashjs-sd-binder",
+    "@ygoto3/omap-dashjs-ui-binder": "file:../dashjs-ui-binder"
   },
   "devDependencies": {
     "ts-loader": "^9.2.6",

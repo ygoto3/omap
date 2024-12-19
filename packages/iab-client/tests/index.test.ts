@@ -3,16 +3,19 @@ import * as assert from 'uvu/assert';
 import IABClient, { sortAdsBySequence } from '../src/IABClient';
 import { OmapClientEvent, IHttpClient, AdPodInsertionRequest, AdPod, Ad } from "@ygoto3/omap-core";
 import { Ad as ParserAd } from '@ygoto3/omap-vast-parser';
+import * as ENV from './setup/env';
 
 
 const test = suite('IABClient');
+
+test.before(ENV.setup);
 
 test('adTagUrl is vmap', async () => {
     const adTagUrl = 'https://example.com/vmap';
     const httpClient = new MockHttpClient();
     httpClient.registerGetFunction(get_function);
     const adClient = new IABClient(adTagUrl, httpClient);
-    
+
     let content_pause_requested_count = 0;
     let content_resume_requested_count = 0;
     let content_can_play_count = 0;
@@ -67,7 +70,7 @@ test('adTagUrl is vmap', async () => {
     const midroll_2_ad_2_creative_1_tracking_midpoint = createPromise();
     const midroll_2_ad_2_creative_1_tracking_thirdQuartile = createPromise();
     const midroll_2_ad_2_creative_1_tracking_complete = createPromise();
-    
+
     adClient.on(OmapClientEvent.CONTENT_PAUSE_REQUESTED, () => {
         content_pause_requested_count++;
     });
@@ -452,7 +455,7 @@ test('adTagUrl is vmap', async () => {
 
     assert.is(content_pause_requested_count, 0, 'Content pause should not be requested');
     assert.is(content_resume_requested_count, 0, 'Content resume should not be requested');
-    
+
     adClient.notifyCurrentTime(0);
     await preroll_1.promise;
 
@@ -467,7 +470,7 @@ test('adTagUrl is vmap', async () => {
     assert.ok(true, 'Impression 1 should be sent');
     await preroll_1_ad_1_impression_2.promise;
     assert.ok(true, 'Impression 2 should be sent');
-    
+
     adClient.notifyAdCreativePlaying(ad.adCreatives[0], 0.01, ad.sequence);
     await ad_1_creative_1_tracking_start.promise;
     assert.ok(true, 'Creative 1 tracking start should be sent');
@@ -478,7 +481,7 @@ test('adTagUrl is vmap', async () => {
 
     adClient.notifyAdCreativePlaying(ad.adCreatives[0], 5.0, ad.sequence);
     await ad_1_creative_1_tracking_midpoint.promise;
-    assert.ok(true, 'Creative 1 tracking midpoint should be sent');    
+    assert.ok(true, 'Creative 1 tracking midpoint should be sent');
 
     adClient.notifyAdCreativePlaying(ad.adCreatives[0], 7.5, ad.sequence);
     await ad_1_creative_1_tracking_thirdQuartile.promise;
@@ -505,7 +508,7 @@ test('adTagUrl is vmap', async () => {
 
     await preroll_1_ad_1_error_1.promise;
     assert.ok(true, 'Ad 2 Impression 2 should fail to be sent');
-    
+
     adClient.notifyAdCreativePlaying(ad.adCreatives[0], 0.1, ad.sequence);
     await ad_2_creative_1_tracking_start.promise;
     assert.ok(true, 'Ad 2 Creative 1 tracking start should be sent');
@@ -545,7 +548,7 @@ test('adTagUrl is vmap', async () => {
     // midroll 1 - 1st ad
     ad = ad_pod!.ads[0];
     assert.is(ad.sequence, ad_pod_prepared!.ads[0].sequence, 'Ad should be the same as the one prefetched');
-    
+
     adClient.notifyAdStarted(ad);
     await midroll_1_ad_1_impression_1.promise;
     assert.ok(true, 'Midroll 1 Impression 1 should be sent');
@@ -589,7 +592,7 @@ test('adTagUrl is vmap', async () => {
     // midroll 2 - 1st ad
     ad = ad_pod!.ads[0];
     assert.is(ad.sequence, ad_pod_prepared!.ads[0].sequence, 'Ad should be the same as the one prefetched');
-    
+
     adClient.notifyAdStarted(ad);
     await midroll_2_ad_1_impression_1.promise;
     assert.ok(true, 'Midroll 2 Ad 1 Impression 1 should be sent');
@@ -617,7 +620,7 @@ test('adTagUrl is vmap', async () => {
     // midroll 2 - 2nd ad
     ad = ad_pod!.ads[1];
     assert.is(ad.sequence, ad_pod_prepared!.ads[1].sequence, 'Ad should be the same as the one prefetched');
-    
+
     adClient.notifyAdStarted(ad);
     await midroll_2_ad_2_impression_1.promise;
     assert.ok(true, 'Midroll 2 Ad 2 Impression 1 should be sent');

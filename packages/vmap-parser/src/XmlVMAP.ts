@@ -1,70 +1,43 @@
-export interface XmlVMAPRoot {
-    ['vmap:VMAP']: XmlVMAP;
+export interface XmlVMAP extends Element {
+    tagName: 'vmap:VMAP';
+    childNodes: NodeListOf<XmlVMAPAdBreak>;
 }
 
-interface XmlVMAP {
-    _attributes: XmlVMAPAttributes;
-    ['vmap:AdBreak']?: XmlVMAPAdBreak | XmlVMAPAdBreak[];
+export interface XmlParserError extends Element {
+    tagName: 'parsererror';
 }
 
-interface XmlVMAPAttributes {
-    version: string;
-    ['xmlns:vmap']: string;
+interface XmlVMAPAdBreak extends Element {
+    tagName: 'vmap:AdBreak';
+    childNodes: NodeListOf<XmlVMAPAdSource>;
 }
 
-interface XmlVMAPAdBreak {
-    _attributes: XmlVMAPAdBreakAttributes;
-    ['vmap:AdSource']: XmlVMAPAdSource | XmlVMAPAdSource[];
+interface XmlVMAPAdSource extends Element {
+    tagName: 'vmap:AdSource';
+    childNodes: NodeListOf<XmlVMAPTrackingEvents | XmlVMAPExtensions | XmlVMAPAdData | XmlVMAPAdTagURI | XmlVMAPCustomAdData>;
 }
 
-interface XmlVMAPAdBreakAttributes {
-    timeOffset: string;
-    breakType: string;
-    breakId?: string;
-    repeatAfter?: string;
+interface XmlVMAPTrackingEvents extends Element {
+    tagName: 'vmap:TrackingEvents';
+    childNodes: NodeListOf<XmlVMAPTracking>;
 }
 
-interface XmlVMAPAdSource {
-    _attributes: XmlVMAPAdSourceAttributes;
-    ['vmap:TrackingEvents']?: XmlVMAPTrackingEvents;
-    ['vmap:Extensions']?: XmlVMAPExtensions;
-    ['vmap:AdData']?: XmlVMAPAdData;
-    ['vmap:AdTagURI']?: XmlVMAPAdTagURI;
-    ['vmap:CustomAdData']?: XmlVMAPCustomAdData;
+interface XmlVMAPExtensions extends Element {
+    tagName: 'vmap:Extensions';
 }
 
-interface XmlVMAPAdSourceAttributes {
-    id: string;
-    allowMultipleAds: string;
-    followRedirects: string;
+interface XmlVMAPAdData extends Element {
+    tagName: 'vmap:AdData';
 }
 
-interface XmlVMAPTrackingEvents {
-    ['vmap:Tracking']: XmlVMAPTracking | XmlVMAPTracking[];
+interface XmlVMAPAdTagURI extends Element {
+    tagName: 'vmap:AdTagURI';
 }
 
-interface XmlVMAPExtensions {
+interface XmlVMAPCustomAdData extends Element {
+    tagName: 'vmap:CustomAdData';
 }
 
-interface XmlVMAPAdData {
-}
-
-interface XmlVMAPAdTagURI {
-    _attributes: XmlVMAPAdTagURIAtributes;
-    _cdata: string;
-}
-
-interface XmlVMAPAdTagURIAtributes {
-    templateType: 'vast' | 'vast1' | 'vast2' | 'vast3';
-}
-
-interface XmlVMAPCustomAdData {
-}
-
-interface XmlVMAPTracking {
-    _attributes: XmlVMAPTrackingAttributes;
-}
-
-interface XmlVMAPTrackingAttributes {
-    event: string;
+interface XmlVMAPTracking extends Element {
+    tagName: 'vmap:Tracking';
 }

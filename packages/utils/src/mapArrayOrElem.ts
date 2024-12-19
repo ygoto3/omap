@@ -1,9 +1,8 @@
-import forceArray from "./forceArray";
 import filterNull from "./filterNull";
 
 export default function mapArrayOrElem<T, U>(
-  arr: T[] | T,
+  arr: T[],
   fn: (item: T) => U | null,
 ): U[] {
-    return forceArray(arr).map(fn).filter(filterNull) as U[];
+    return arr.map(fn).filter(filterNull) as U[];
 }

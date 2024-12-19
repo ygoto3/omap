@@ -1,8 +1,11 @@
 import { suite } from 'uvu';
 import * as assert from 'uvu/assert';
 import VMAPParser from '../src/VMAPParser';
+import * as ENV from './setup/env';
 
 const test = suite('VMAPParser');
+
+test.before(ENV.setup);
 
 test('parse normal VMAP', () => {
     let vmap: string;

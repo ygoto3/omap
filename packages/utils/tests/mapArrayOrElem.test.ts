@@ -7,10 +7,6 @@ const test = suite('utils');
 test('mapArrayOrElem', () => {
     let actual: any;
     let expected: any;
-    
-    expected = ['aa'];
-    actual = mapArrayOrElem('a', (item) => item + item);
-    assert.equal(actual, expected);
 
     expected = ['bb', 'cc'];
     actual = mapArrayOrElem(['b', 'c'], (item) => item + item);
