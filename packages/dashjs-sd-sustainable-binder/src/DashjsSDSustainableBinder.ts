@@ -101,8 +101,12 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     private _periodManipulationRoom: number;
 
     private _restoreManifest(): Manifest | undefined {
-        const manifest = this.dashjs.getDashAdapter().getMpd().manifest as Manifest | null;
-        if (manifest === null) return;
+        // During an ad break the base SD binder has detached dash.js's source, so the adapter
+        // no longer holds the manifest. Use the manifest saved by the base class in that case.
+        // Outside ad breaks (seek beyond ad break, ad insertion failure) fall back to the adapter.
+        const manifest = (this._savedManifest as Manifest | undefined)
+            ?? (this.dashjs.getDashAdapter().getMpd()?.manifest as Manifest | null);
+        if (!manifest) return;
         const originalPeriods = deepCopy(this._originalPeriods);
         manifest.Period_asArray.length = 0;
         manifest.Period_asArray.push(...originalPeriods);
@@ -110,13 +114,16 @@ export default class OmapDashjsSDSustainableBinder extends OmapDashjsSDBinder im
     }
 
     private _restart(startTime?: number): void {
-        if (!this.dashjs.isReady()) return;
-        this.lastPlayheadTime = startTime || this.dashjs.time();
         const manifest = this._restoreManifest();
-        if (typeof manifest !== 'undefined') {
-            this.dashjs.attachSource(manifest, this.lastPlayheadTime);
-        }
-        
+        if (typeof manifest === 'undefined') return;
+        // After the base class detaches the source, dashjs.time() returns 0, so prefer the
+        // explicit startTime and fall back to the saved lastPlayheadTime from the pause event.
+        this.lastPlayheadTime = startTime || eraseNaN(this.lastPlayheadTime) || this.dashjs.time();
+        this.dashjs.attachSource(manifest, this.lastPlayheadTime);
+        // The saved manifest is now stale; clear it so a later _restart (seek, insertion failure)
+        // doesn't fall back to it instead of the current adapter state.
+        this._savedManifest = void 0;
+
         this._resetState();
     }
 
